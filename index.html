@@ -40,6 +40,7 @@
   <button class="tab-btn active" data-tab="holdings">Holdings</button>
   <button class="tab-btn" data-tab="funds">Funds</button>
   <button class="tab-btn" data-tab="plan">Plan</button>
+  <button class="tab-btn" data-tab="watchlist">Watchlist</button>
 </nav>
 
 <!-- ===================== HOLDINGS TAB ===================== -->
@@ -241,6 +242,30 @@
 
 </section>
 
+<!-- ===================== WATCHLIST TAB ===================== -->
+<section class="tab-panel" id="tab-watchlist">
+
+  <div class="cards-row">
+    <div class="card">
+      <div class="card-label">Categories</div>
+      <div class="card-value" id="wl-card-cats">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Stocks</div>
+      <div class="card-value" id="wl-card-stocks">—</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">NIFTY Category Watchlists</div>
+    <button class="btn btn-primary" id="btn-import-watchlist">+ Import NIFTY CSV</button>
+    <input type="file" id="watchlist-file-input" accept=".csv" style="display:none" multiple>
+  </div>
+
+  <div id="watchlist-categories-grid" class="wl-grid"></div>
+
+</section>
+
 <!-- ===================== TOAST CONTAINER ===================== -->
 <div id="toast-container"></div>
 
@@ -296,6 +321,35 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: WATCHLIST VIEW ===================== -->
+<div class="modal-backdrop" id="modal-watchlist-view">
+  <div class="modal" style="max-width:700px" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title" id="wl-view-title">Watchlist</div>
+      <button class="modal-close" data-close="modal-watchlist-view">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="table-wrap" style="max-height:60vh;overflow-y:auto">
+        <table id="wl-stocks-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">Symbol</th>
+              <th>LTP</th>
+              <th>% Change</th>
+              <th>52W High</th>
+              <th>52W Low</th>
+            </tr>
+          </thead>
+          <tbody id="wl-stocks-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-watchlist-view">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MODAL: ADD/EDIT PLAN ===================== -->
 <div class="modal-backdrop" id="modal-plan">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title">
@@ -305,11 +359,24 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="plan-id">
+      <div class="form-group">
+        <label class="form-label" for="p-category">NIFTY Category</label>
+        <select class="form-control" id="p-category">
+          <option value="">— Type symbol manually —</option>
+        </select>
+      </div>
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group" id="p-symbol-group">
           <label class="form-label" for="p-symbol">Symbol <span>*</span></label>
           <input class="form-control" id="p-symbol" type="text" placeholder="e.g. RELIANCE" autocomplete="off">
           <div class="form-error" id="p-symbol-err"></div>
+        </div>
+        <div class="form-group" id="p-stock-select-group" style="display:none">
+          <label class="form-label" for="p-stock-select">Stock <span>*</span></label>
+          <select class="form-control" id="p-stock-select">
+            <option value="">— Select stock —</option>
+          </select>
+          <div class="form-error" id="p-stock-err"></div>
         </div>
         <div class="form-group">
           <label class="form-label" for="p-exchange">Exchange</label>
@@ -480,6 +547,7 @@
 <script src="js/funds.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/plan.js"></script>
+<script src="js/watchlist.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/credentials.js"></script>

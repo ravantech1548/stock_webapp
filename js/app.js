@@ -51,6 +51,7 @@
     });
     if (tabName === 'funds') Funds.render();
     if (tabName === 'plan') Plan.render();
+    if (tabName === 'watchlist') Watchlist.render();
   }
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -171,6 +172,7 @@
     Holdings.init();
     Funds.init();
     Plan.init();
+    Watchlist.init();
     PriceService.init();
     CSVParser.init();
 

@@ -3,11 +3,12 @@
 
   const P = window.Config.STORAGE_PREFIX;
   const KEYS = {
-    holdings: P + 'holdings',
-    prices:   P + 'prices',
-    funds:    P + 'funds',
-    settings: P + 'settings',
-    plans:    P + 'plans'
+    holdings:  P + 'holdings',
+    prices:    P + 'prices',
+    funds:     P + 'funds',
+    settings:  P + 'settings',
+    plans:     P + 'plans',
+    watchlist: P + 'watchlist'
   };
 
   function read(key) {
@@ -21,10 +22,11 @@
   }
 
   const SYNC_KEY_MAP = {
-    [P + 'holdings']: 'holdings',
-    [P + 'funds']:    'funds',
-    [P + 'plans']:    'plans',
-    [P + 'settings']: 'settings'
+    [P + 'holdings']:  'holdings',
+    [P + 'funds']:     'funds',
+    [P + 'plans']:     'plans',
+    [P + 'settings']:  'settings',
+    [P + 'watchlist']: 'watchlist'
   };
 
   function write(key, value) {
@@ -146,6 +148,27 @@
     return write(KEYS.plans, list);
   }
 
+  /* ---- WATCHLIST ---- */
+  function getWatchlist() {
+    return read(KEYS.watchlist) || {};
+  }
+
+  function saveWatchlist(obj) {
+    return write(KEYS.watchlist, obj);
+  }
+
+  function upsertWatchlistCategory(cat) {
+    const wl = getWatchlist();
+    wl[cat.id] = { ...cat };
+    return write(KEYS.watchlist, wl);
+  }
+
+  function deleteWatchlistCategory(id) {
+    const wl = getWatchlist();
+    delete wl[id];
+    return write(KEYS.watchlist, wl);
+  }
+
   /* ---- SETTINGS ---- */
   function getSettings() {
     return read(KEYS.settings) || {
@@ -164,6 +187,7 @@
     getPrices, getPrice, setPrice, setPrices,
     getFunds, saveFunds, addFundTransaction, deleteFundTransaction, setMonthlyTarget,
     getPlans, savePlans, upsertPlan, deletePlan,
+    getWatchlist, saveWatchlist, upsertWatchlistCategory, deleteWatchlistCategory,
     getSettings, saveSettings
   };
 })();

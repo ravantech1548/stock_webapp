@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const SYNC_KEYS = ['holdings', 'funds', 'plans', 'settings'];
+  const SYNC_KEYS = ['holdings', 'funds', 'plans', 'settings', 'watchlist'];
   let dbRef = null;
   let enabled = false;
 

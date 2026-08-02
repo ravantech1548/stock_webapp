@@ -1,12 +1,9 @@
-// Firebase project configuration
-// Get these values from: Firebase Console → Your Project → Project Settings → Your apps → Web app
-// Steps: https://console.firebase.google.com → Add project → Realtime Database → Create database
 window.FIREBASE_CONFIG = {
-  apiKey:            "YOUR-API-KEY",
-  authDomain:        "YOUR-PROJECT.firebaseapp.com",
-  databaseURL:       "https://YOUR-PROJECT-default-rtdb.firebaseio.com",
-  projectId:         "YOUR-PROJECT",
-  storageBucket:     "YOUR-PROJECT.appspot.com",
-  messagingSenderId: "YOUR-SENDER-ID",
-  appId:             "YOUR-APP-ID"
+  apiKey:            "AIzaSyCfgvrYleGLXvFBDVL6r_NipmDVLyIEtMo",
+  authDomain:        "stock-portfolio-6b893.firebaseapp.com",
+  databaseURL:       "https://stock-portfolio-6b893-default-rtdb.firebaseio.com",
+  projectId:         "stock-portfolio-6b893",
+  storageBucket:     "stock-portfolio-6b893.firebasestorage.app",
+  messagingSenderId: "419130828586",
+  appId:             "1:419130828586:web:9d287f98fa8f11486c2053"
 };
