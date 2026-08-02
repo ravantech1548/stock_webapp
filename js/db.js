@@ -97,10 +97,11 @@
       if (!firebase.apps.length) {
         firebase.initializeApp(window.FIREBASE_CONFIG);
       }
-      dbRef = firebase.database().ref('portfolio');
-
-      const snap = await dbRef.once('value');
-      const remote = snap.val();
+      // Timeout promise to prevent blocking boot if Firebase RTDB is slow/offline
+      const fetchPromise = dbRef.once('value');
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout')), 3000));
+      const snap = await Promise.race([fetchPromise, timeoutPromise]);
+      const remote = snap ? snap.val() : null;
 
       if (!remote) {
         // Firebase empty — push local data up (first-time migration)

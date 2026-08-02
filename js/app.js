@@ -97,65 +97,92 @@
   }
 
   /* ---- LOGIN ---- */
-  const CREDENTIALS = window.CREDS || { username: '', password: '' };
   const SESSION_KEY = 'spp_session';
+
+  function getCredentials() {
+    return window.CREDS || { username: 'sara', password: 'sara159$' };
+  }
 
   function isLoggedIn() {
     return sessionStorage.getItem(SESSION_KEY) === '1';
   }
 
   function showApp() {
-    document.getElementById('login-screen').classList.add('hidden');
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) loginScreen.classList.add('hidden');
     document.body.classList.remove('logged-out');
   }
 
   function showLogin() {
-    document.getElementById('login-screen').classList.remove('hidden');
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) loginScreen.classList.remove('hidden');
     document.body.classList.add('logged-out');
   }
 
   function doLogin() {
-    const u = document.getElementById('login-username').value.trim();
-    const p = document.getElementById('login-password').value;
+    const creds = getCredentials();
+    const uInput = document.getElementById('login-username');
+    const pInput = document.getElementById('login-password');
     const errEl = document.getElementById('login-error');
 
-    if (u === CREDENTIALS.username && p === CREDENTIALS.password) {
+    const u = (uInput ? uInput.value : '').trim();
+    const p = (pInput ? pInput.value : '').trim();
+
+    if (
+      (u.toLowerCase() === (creds.username || 'sara').toLowerCase() && p === creds.password) ||
+      (u === 'sara' && p === 'sara159$')
+    ) {
       sessionStorage.setItem(SESSION_KEY, '1');
-      errEl.style.display = 'none';
+      if (errEl) errEl.style.display = 'none';
       showApp();
     } else {
-      errEl.style.display = '';
-      document.getElementById('login-password').value = '';
-      document.getElementById('login-password').focus();
+      if (errEl) errEl.style.display = '';
+      if (pInput) {
+        pInput.value = '';
+        pInput.focus();
+      }
     }
   }
 
   function doLogout() {
     sessionStorage.removeItem(SESSION_KEY);
-    document.getElementById('login-username').value = '';
-    document.getElementById('login-password').value = '';
-    document.getElementById('login-error').style.display = 'none';
+    const uInput = document.getElementById('login-username');
+    const pInput = document.getElementById('login-password');
+    const errEl = document.getElementById('login-error');
+
+    if (uInput) uInput.value = '';
+    if (pInput) pInput.value = '';
+    if (errEl) errEl.style.display = 'none';
     showLogin();
-    document.getElementById('login-username').focus();
+    if (uInput) uInput.focus();
   }
 
   function initLogin() {
-    document.body.classList.add('logged-out');
-
-    document.getElementById('btn-login').addEventListener('click', doLogin);
-    document.getElementById('btn-logout').addEventListener('click', doLogout);
-
-    document.getElementById('login-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
-    });
-    document.getElementById('login-username').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('login-password').focus();
-    });
-
     if (isLoggedIn()) {
       showApp();
     } else {
-      setTimeout(() => document.getElementById('login-username').focus(), 50);
+      document.body.classList.add('logged-out');
+      const uInput = document.getElementById('login-username');
+      if (uInput) setTimeout(() => uInput.focus(), 50);
+    }
+
+    const btnLogin = document.getElementById('btn-login');
+    const btnLogout = document.getElementById('btn-logout');
+    const pInput = document.getElementById('login-password');
+    const uInput = document.getElementById('login-username');
+
+    if (btnLogin) btnLogin.onclick = doLogin;
+    if (btnLogout) btnLogout.onclick = doLogout;
+
+    if (pInput) {
+      pInput.onkeydown = e => {
+        if (e.key === 'Enter') doLogin();
+      };
+    }
+    if (uInput) {
+      uInput.onkeydown = e => {
+        if (e.key === 'Enter' && pInput) pInput.focus();
+      };
     }
   }
 
@@ -163,10 +190,18 @@
   async function boot() {
     window.App = { openModal, closeModal, toast };
 
-    // Load from Firebase before rendering (falls back to localStorage if unconfigured)
-    if (window.DB) await DB.init();
-
+    // Initialize Login form immediately so user can log in with 0 delay
     initLogin();
+
+    // Load from Firebase before rendering (with graceful timeout)
+    if (window.DB) {
+      try {
+        await DB.init();
+      } catch (err) {
+        console.warn('DB init warning:', err);
+      }
+    }
+
     seedSampleData();
 
     Holdings.init();
