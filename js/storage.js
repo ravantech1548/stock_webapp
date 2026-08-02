@@ -54,11 +54,15 @@
 
   /* ---- HOLDINGS ---- */
   function getHoldings() {
-    return read(KEYS.holdings) || [];
+    const raw = read(KEYS.holdings);
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object') return Object.values(raw).filter(Boolean);
+    return [];
   }
 
   function saveHoldings(holdings) {
-    return write(KEYS.holdings, holdings);
+    return write(KEYS.holdings, Array.isArray(holdings) ? holdings : []);
   }
 
   function upsertHolding(holding) {
@@ -67,7 +71,7 @@
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...holding, updatedAt: new Date().toISOString() };
     } else {
-      list.push({ ...holding, addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      list.push({ ...holding, addedAt: holding.addedAt || new Date().toISOString(), updatedAt: new Date().toISOString() });
     }
     return write(KEYS.holdings, list);
   }
@@ -79,7 +83,8 @@
 
   /* ---- PRICES ---- */
   function getPrices() {
-    return read(KEYS.prices) || {};
+    const raw = read(KEYS.prices);
+    return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   }
 
   function setPrice(symbol, priceData) {
@@ -98,11 +103,26 @@
 
   /* ---- FUNDS ---- */
   function getFunds() {
-    return read(KEYS.funds) || { monthlyTarget: window.Config.MONTHLY_TARGET, transactions: [] };
+    const raw = read(KEYS.funds);
+    const defaultTarget = (window.Config && window.Config.MONTHLY_TARGET) || 25000;
+    if (!raw) return { monthlyTarget: defaultTarget, transactions: [] };
+    return {
+      monthlyTarget: (typeof raw.monthlyTarget === 'number' && !isNaN(raw.monthlyTarget))
+        ? raw.monthlyTarget
+        : (parseFloat(raw.monthlyTarget) || defaultTarget),
+      transactions: Array.isArray(raw.transactions)
+        ? raw.transactions
+        : (raw.transactions && typeof raw.transactions === 'object' ? Object.values(raw.transactions).filter(Boolean) : [])
+    };
   }
 
   function saveFunds(funds) {
-    return write(KEYS.funds, funds);
+    const defaultTarget = (window.Config && window.Config.MONTHLY_TARGET) || 25000;
+    const normalized = {
+      monthlyTarget: (funds && typeof funds.monthlyTarget === 'number') ? funds.monthlyTarget : defaultTarget,
+      transactions: (funds && Array.isArray(funds.transactions)) ? funds.transactions : []
+    };
+    return write(KEYS.funds, normalized);
   }
 
   function addFundTransaction(tx) {
@@ -119,17 +139,21 @@
 
   function setMonthlyTarget(amount) {
     const funds = getFunds();
-    funds.monthlyTarget = amount;
+    funds.monthlyTarget = Number(amount) || 25000;
     return write(KEYS.funds, funds);
   }
 
   /* ---- PLANS ---- */
   function getPlans() {
-    return read(KEYS.plans) || [];
+    const raw = read(KEYS.plans);
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object') return Object.values(raw).filter(Boolean);
+    return [];
   }
 
   function savePlans(plans) {
-    return write(KEYS.plans, plans);
+    return write(KEYS.plans, Array.isArray(plans) ? plans : []);
   }
 
   function upsertPlan(plan) {
@@ -138,7 +162,7 @@
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...plan, updatedAt: new Date().toISOString() };
     } else {
-      list.push({ ...plan, addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      list.push({ ...plan, addedAt: plan.addedAt || new Date().toISOString(), updatedAt: new Date().toISOString() });
     }
     return write(KEYS.plans, list);
   }
@@ -150,11 +174,19 @@
 
   /* ---- WATCHLIST ---- */
   function getWatchlist() {
-    return read(KEYS.watchlist) || {};
+    const raw = read(KEYS.watchlist);
+    if (!raw) return {};
+    if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+    if (Array.isArray(raw)) {
+      const map = {};
+      raw.forEach(item => { if (item && item.id) map[item.id] = item; });
+      return map;
+    }
+    return {};
   }
 
   function saveWatchlist(obj) {
-    return write(KEYS.watchlist, obj);
+    return write(KEYS.watchlist, (obj && typeof obj === 'object') ? obj : {});
   }
 
   function upsertWatchlistCategory(cat) {

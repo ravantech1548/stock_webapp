@@ -8,21 +8,22 @@
   /* ---- TOTALS & ANALYTICS ---- */
   function calcTotals(targetMonthKey) {
     const mk = targetMonthKey || selectedMonthKey;
-    const funds = Storage.getFunds();
-    const holdings = Storage.getHoldings();
+    const funds = Storage.getFunds() || { monthlyTarget: 25000, transactions: [] };
+    const holdings = Storage.getHoldings() || [];
+    const txs = Array.isArray(funds.transactions) ? funds.transactions : [];
 
-    const totalLoaded = funds.transactions.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+    const totalLoaded = txs.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
     const totalInvested = holdings.reduce((s, h) => s + ((parseFloat(h.avgBuyPrice) || 0) * (parseFloat(h.qty) || 0)), 0);
     const balance = totalLoaded - totalInvested;
 
     // Monthly breakdown
-    const monthLoaded = funds.transactions
-      .filter(t => getMonthKey(t.date) === mk)
+    const monthLoaded = txs
+      .filter(t => t && t.date && getMonthKey(t.date) === mk)
       .reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
 
     // Monthly invested (holdings added in this month)
     const monthInvested = holdings
-      .filter(h => h.addedAt && getMonthKey(h.addedAt) === mk)
+      .filter(h => h && h.addedAt && getMonthKey(h.addedAt) === mk)
       .reduce((s, h) => s + ((parseFloat(h.avgBuyPrice) || 0) * (parseFloat(h.qty) || 0)), 0);
 
     return {
@@ -151,8 +152,9 @@
     const monthKeysSet = new Set();
     monthKeysSet.add(currentMonthKey());
 
-    funds.transactions.forEach(t => {
-      if (t.date) monthKeysSet.add(getMonthKey(t.date));
+    const txs = (funds && Array.isArray(funds.transactions)) ? funds.transactions : [];
+    txs.forEach(t => {
+      if (t && t.date) monthKeysSet.add(getMonthKey(t.date));
     });
 
     const sortedKeys = Array.from(monthKeysSet).sort().reverse();
