@@ -170,12 +170,22 @@
   }
 
   function readCSV(file) {
-    Papa.parse(file, {
-      header: false, // Parse as 2D array first to detect multi-row header offset
-      skipEmptyLines: true,
-      complete: result => processRawGrid(result.data),
-      error: err => App.toast('CSV parse error: ' + err.message, 'error')
-    });
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const text = e.target.result;
+        Papa.parse(text, {
+          header: false, // Parse as 2D array first to detect multi-row header offset
+          skipEmptyLines: true,
+          complete: result => processRawGrid(result.data),
+          error: err => App.toast('CSV parse error: ' + err.message, 'error')
+        });
+      } catch (err) {
+        App.toast('Failed to parse CSV: ' + err.message, 'error');
+      }
+    };
+    reader.onerror = err => App.toast('File read error: ' + (err.message || 'Could not read file'), 'error');
+    reader.readAsText(file);
   }
 
   function readExcel(file) {

@@ -143,6 +143,7 @@
 
   /* ---- EXCEL & CSV FILE PARSER ---- */
   function parseFile(file) {
+    if (!file) return;
     const fileName = file.name.toLowerCase();
 
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
@@ -159,13 +160,24 @@
           App.toast('Failed to parse Excel file: ' + err.message, 'error');
         }
       };
+      reader.onerror = err => App.toast('File read error: ' + (err.message || 'Could not read file'), 'error');
       reader.readAsArrayBuffer(file);
     } else {
-      Papa.parse(file, {
-        skipEmptyLines: true,
-        complete: result => processRawRows(result.data, file.name),
-        error: err => App.toast('CSV error: ' + err.message, 'error')
-      });
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const text = e.target.result;
+          Papa.parse(text, {
+            skipEmptyLines: true,
+            complete: result => processRawRows(result.data, file.name),
+            error: err => App.toast('CSV error: ' + err.message, 'error')
+          });
+        } catch (err) {
+          App.toast('Failed to parse CSV: ' + err.message, 'error');
+        }
+      };
+      reader.onerror = err => App.toast('File read error: ' + (err.message || 'Could not read file'), 'error');
+      reader.readAsText(file);
     }
   }
 
