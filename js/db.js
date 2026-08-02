@@ -6,7 +6,9 @@
   let dbRef = null;
   let enabled = false;
   let isSyncing = false;
+  let syncCoolDownTimer = null;
   let debounceTimer = null;
+  let lastLocalWriteAt = 0;
   let lastError = null;
 
   function getDatabaseURL() {
@@ -75,19 +77,33 @@
   /* Push one key to Firebase with debouncing */
   function push(key, value) {
     if (!enabled || !dbRef) return;
+    lastLocalWriteAt = Date.now();
+    isSyncing = true;
     updateSyncUI('syncing');
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      dbRef.child(key).set(value)
+      // Ensure arrays (like plans, holdings) are sent as pure clean arrays
+      let cleanValue = value;
+      if ((key === 'plans' || key === 'holdings') && Array.isArray(value)) {
+        cleanValue = value.map(item => ({ ...item }));
+      }
+
+      dbRef.child(key).set(cleanValue)
         .then(() => {
           updateSyncUI('connected');
+          // Maintain brief lock to prevent echo overwrite
+          clearTimeout(syncCoolDownTimer);
+          syncCoolDownTimer = setTimeout(() => {
+            isSyncing = false;
+          }, 800);
         })
         .catch(e => {
+          isSyncing = false;
           console.warn('DB push failed for key:', key, e);
           updateSyncUI('error', 'Write failed: ' + (e.message || e));
         });
-    }, 400);
+    }, 100);
   }
 
   /* Upload all current localStorage data to Firebase (migration or manual sync) */
@@ -96,6 +112,8 @@
       const ok = await init();
       if (!ok) throw new Error(lastError || 'Cannot connect to database');
     }
+    lastLocalWriteAt = Date.now();
+    isSyncing = true;
     updateSyncUI('syncing');
     const P = getPrefix();
     const data = {};
@@ -108,6 +126,7 @@
     data.lastSyncAt = new Date().toISOString();
     await dbRef.set(data);
     updateSyncUI('connected');
+    setTimeout(() => { isSyncing = false; }, 800);
   }
 
   /* Pull all Firebase data into localStorage */
@@ -116,7 +135,12 @@
     const P = getPrefix();
     SYNC_KEYS.forEach(k => {
       if (remote[k] !== undefined && remote[k] !== null) {
-        localStorage.setItem(P + k, JSON.stringify(remote[k]));
+        let val = remote[k];
+        // Normalize arrays stored as object maps by Firebase
+        if ((k === 'holdings' || k === 'plans') && !Array.isArray(val) && typeof val === 'object') {
+          val = Object.values(val).filter(Boolean);
+        }
+        localStorage.setItem(P + k, JSON.stringify(val));
       }
     });
   }
@@ -137,7 +161,6 @@
       if (!firebase.apps.length) {
         firebase.initializeApp(config);
       } else {
-        // Re-init with new databaseURL if needed
         try {
           firebase.app().delete();
           firebase.initializeApp(config);
@@ -165,7 +188,8 @@
       // Realtime listener for cross-tab or remote device sync
       dbRef.on('value', snapshot => {
         const data = snapshot.val();
-        if (data && !isSyncing) {
+        // Ignore echo events if we just wrote locally
+        if (data && !isSyncing && (Date.now() - lastLocalWriteAt > 1000)) {
           pull(data);
           // Trigger re-render of active UI components if available
           if (window.Holdings && window.Holdings.render) Holdings.render();

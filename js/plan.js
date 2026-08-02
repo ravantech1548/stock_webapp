@@ -752,7 +752,7 @@
 
     symbol = window.PriceService ? PriceService.cleanSymbol(symbol) : symbol;
 
-    const existing = id ? Storage.getPlans().find(p => p.id === id) : null;
+    const existing = id ? Storage.getPlans().find(p => String(p.id) === String(id)) : null;
     const plan = {
       id: id || generateId(),
       symbol: symbol,
@@ -767,6 +767,7 @@
       holdingId: existing ? existing.holdingId : null,
       executedMonthKey: existing ? existing.executedMonthKey : null,
       executedAt: existing ? existing.executedAt : null,
+      addedAt: existing ? (existing.addedAt || existing.createdAt || new Date().toISOString()) : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 

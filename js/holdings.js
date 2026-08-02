@@ -356,7 +356,7 @@
   }
 
   function openEditModal(id) {
-    const holding = Storage.getHoldings().find(h => h.id === id);
+    const holding = Storage.getHoldings().find(h => String(h.id) === String(id));
     if (!holding) return;
     document.getElementById('holding-modal-title').textContent = 'Edit Holding';
     document.getElementById('holding-id').value = holding.id;

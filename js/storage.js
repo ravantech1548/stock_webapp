@@ -68,7 +68,7 @@
 
   function upsertHolding(holding) {
     const list = getHoldings();
-    const idx = list.findIndex(h => h.id === holding.id);
+    const idx = list.findIndex(h => String(h.id) === String(holding.id));
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...holding, updatedAt: new Date().toISOString() };
     } else {
@@ -78,7 +78,7 @@
   }
 
   function deleteHolding(id) {
-    const list = getHoldings().filter(h => h.id !== id);
+    const list = getHoldings().filter(h => String(h.id) !== String(id));
     return write(KEYS.holdings, list);
   }
 
@@ -134,7 +134,7 @@
 
   function deleteFundTransaction(id) {
     const funds = getFunds();
-    funds.transactions = funds.transactions.filter(t => t.id !== id);
+    funds.transactions = funds.transactions.filter(t => String(t.id) !== String(id));
     return write(KEYS.funds, funds);
   }
 
@@ -159,7 +159,7 @@
 
   function upsertPlan(plan) {
     const list = getPlans();
-    const idx = list.findIndex(p => p.id === plan.id);
+    const idx = list.findIndex(p => String(p.id) === String(plan.id));
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...plan, updatedAt: new Date().toISOString() };
     } else {
@@ -169,7 +169,7 @@
   }
 
   function deletePlan(id) {
-    const list = getPlans().filter(p => p.id !== id);
+    const list = getPlans().filter(p => String(p.id) !== String(id));
     return write(KEYS.plans, list);
   }
 
