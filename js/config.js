@@ -3,12 +3,17 @@ window.Config = {
   CURRENCY_SYMBOL: '₹',
   LOCALE: 'en-IN',
   STORAGE_PREFIX: 'spp_',
-  CORS_PROXY: 'https://api.allorigins.win/get?url=',
-  YAHOO_BASE_URL: 'https://query1.finance.yahoo.com/v8/finance/chart/',
+  CORS_PROXIES: [
+    { name: 'corsproxy.io', url: 'https://corsproxy.io/?url=', type: 'direct' },
+    { name: 'allorigins',   url: 'https://api.allorigins.win/get?url=', type: 'allorigins' },
+    { name: 'codetabs',     url: 'https://api.codetabs.com/v1/proxy?quest=', type: 'direct' }
+  ],
+  YAHOO_SERVERS: ['query1', 'query2'],
   DEFAULT_EXCHANGE_SUFFIX: '.NS',
   BSE_SUFFIX: '.BO',
-  PRICE_STALE_MINUTES: 60,
+  PRICE_STALE_MINUTES: 30,
   PRICE_VERY_STALE_HOURS: 24,
-  BATCH_FETCH_DELAY_MS: 400,
-  VERSION: '1.0.0'
+  BATCH_SIZE: 15,
+  BATCH_FETCH_DELAY_MS: 250,
+  VERSION: '2.0.0'
 };
