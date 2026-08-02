@@ -1,7 +1,7 @@
 window.FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCfgvrYleGLXvFBDVL6r_NipmDVLyIEtMo",
   authDomain:        "stock-portfolio-6b893.firebaseapp.com",
-  databaseURL:       "https://stock-portfolio-6b893-default-rtdb.firebaseio.com",
+  databaseURL:       "https://stock-portfolio-6b893-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "stock-portfolio-6b893",
   storageBucket:     "stock-portfolio-6b893.firebasestorage.app",
   messagingSenderId: "419130828586",
