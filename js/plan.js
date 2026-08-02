@@ -1,13 +1,126 @@
 (function () {
   'use strict';
 
-  let pendingDeleteId = null;
+  const { formatCurrency, formatDate, generateId, todayISO, currentMonthKey, getMonthKey, monthLabel, clamp, escHtml } = window.Utils;
 
-  /* ---- SUMMARY CARDS ---- */
-  function updateSummaryCards(plans) {
-    const planned = plans.filter(p => p.status === 'planned');
-    const executed = plans.filter(p => p.status === 'executed');
-    const totalPlannedValue = planned.reduce((s, p) => s + (p.qty * p.targetPrice), 0);
+  let pendingDeleteId = null;
+  let selectedMonthKey = currentMonthKey();
+
+  /* ---- MONTHLY BUDGET & CARRY-FORWARD CALCULATION ---- */
+  function calcMonthlyPlanBudget(targetMonthKey) {
+    const funds = Storage.getFunds() || { monthlyTarget: 25000, transactions: [] };
+    const baseMonthlyTarget = parseFloat(funds.monthlyTarget) || 25000;
+    const plans = Storage.getPlans() || [];
+    const txs = Array.isArray(funds.transactions) ? funds.transactions : [];
+
+    // Gather all distinct months in chronological order
+    const monthKeysSet = new Set();
+    monthKeysSet.add(currentMonthKey());
+    if (targetMonthKey && targetMonthKey !== 'all') monthKeysSet.add(targetMonthKey);
+
+    txs.forEach(t => {
+      if (t && t.date) {
+        const k = getMonthKey(t.date);
+        if (k) monthKeysSet.add(k);
+      }
+    });
+
+    plans.forEach(p => {
+      if (p.executedMonthKey) monthKeysSet.add(p.executedMonthKey);
+      if (p.monthKey) monthKeysSet.add(p.monthKey);
+      if (p.updatedAt) {
+        const k = getMonthKey(p.updatedAt);
+        if (k) monthKeysSet.add(k);
+      }
+    });
+
+    const sortedMonthKeys = Array.from(monthKeysSet).filter(Boolean).sort(); // chronological: oldest to newest
+
+    let runningCarryForward = 0;
+    const monthStatsMap = {};
+
+    sortedMonthKeys.forEach(mKey => {
+      const available = baseMonthlyTarget + runningCarryForward;
+
+      // Executed plans attributed to this month
+      const executedInMonth = plans.filter(p => {
+        if (p.status !== 'executed') return false;
+        if (p.executedMonthKey) return p.executedMonthKey === mKey;
+        if (p.monthKey) return p.monthKey === mKey;
+        if (p.executedAt) return getMonthKey(p.executedAt) === mKey;
+        return mKey === currentMonthKey();
+      });
+
+      const consumed = executedInMonth.reduce((s, p) => s + ((parseFloat(p.qty) || 0) * (parseFloat(p.targetPrice) || 0)), 0);
+      const remaining = Math.max(0, available - consumed);
+
+      // Active / planned in this month
+      const plannedInMonth = plans.filter(p => {
+        if (p.status === 'executed') return false;
+        const pMonth = p.monthKey || currentMonthKey();
+        return pMonth === mKey;
+      });
+      const activePlannedValue = plannedInMonth.reduce((s, p) => s + ((parseFloat(p.qty) || 0) * (parseFloat(p.targetPrice) || 0)), 0);
+
+      monthStatsMap[mKey] = {
+        monthKey: mKey,
+        baseTarget: baseMonthlyTarget,
+        carriedForward: runningCarryForward,
+        totalAvailable: available,
+        consumed: consumed,
+        remaining: remaining,
+        activePlannedValue: activePlannedValue,
+        executedCount: executedInMonth.length,
+        plannedCount: plannedInMonth.length
+      };
+
+      // Unexecuted remaining budget carries forward to next month
+      runningCarryForward = remaining;
+    });
+
+    // If targetMonthKey is 'all' or not found, return summary
+    if (targetMonthKey === 'all') {
+      const allExecuted = plans.filter(p => p.status === 'executed');
+      const allPlanned = plans.filter(p => p.status === 'planned');
+      const totalConsumed = allExecuted.reduce((s, p) => s + (p.qty * p.targetPrice), 0);
+      const totalPlanned = allPlanned.reduce((s, p) => s + (p.qty * p.targetPrice), 0);
+      const curStats = monthStatsMap[currentMonthKey()] || {
+        baseTarget: baseMonthlyTarget,
+        carriedForward: 0,
+        totalAvailable: baseMonthlyTarget,
+        consumed: 0,
+        remaining: baseMonthlyTarget
+      };
+      return {
+        monthKey: 'all',
+        baseTarget: baseMonthlyTarget,
+        carriedForward: curStats.carriedForward,
+        totalAvailable: curStats.totalAvailable,
+        consumed: totalConsumed,
+        remaining: curStats.remaining,
+        activePlannedValue: totalPlanned,
+        executedCount: allExecuted.length,
+        plannedCount: allPlanned.length
+      };
+    }
+
+    return monthStatsMap[targetMonthKey] || {
+      monthKey: targetMonthKey,
+      baseTarget: baseMonthlyTarget,
+      carriedForward: runningCarryForward,
+      totalAvailable: baseMonthlyTarget + runningCarryForward,
+      consumed: 0,
+      remaining: baseMonthlyTarget + runningCarryForward,
+      activePlannedValue: 0,
+      executedCount: 0,
+      plannedCount: 0
+    };
+  }
+
+  /* ---- SUMMARY CARDS & MONTH PROGRESS ---- */
+  function updateSummaryCards(budgetStats, filteredPlans) {
+    const planned = filteredPlans.filter(p => p.status === 'planned');
+    const executed = filteredPlans.filter(p => p.status === 'executed');
 
     // Calculate how many are currently in buy zone (LTP <= Target Price)
     let inBuyZoneCount = 0;
@@ -18,17 +131,114 @@
       }
     });
 
-    const elTotal = document.getElementById('plan-card-total');
-    const elPlanned = document.getElementById('plan-card-planned');
-    const elExecuted = document.getElementById('plan-card-executed');
-    const elValue = document.getElementById('plan-card-value');
+    // Summary Cards
+    const elCardBudget = document.getElementById('plan-card-budget');
+    const elCardBudgetSub = document.getElementById('plan-card-budget-sub');
+    const elCardExecutedVal = document.getElementById('plan-card-executed-val');
+    const elCardExecutedCount = document.getElementById('plan-card-executed-count');
+    const elCardRemaining = document.getElementById('plan-card-remaining');
+    const elCardRemainingSub = document.getElementById('plan-card-remaining-sub');
+    const elCardValue = document.getElementById('plan-card-value');
+    const elCardPlannedCount = document.getElementById('plan-card-planned-count');
 
-    if (elTotal) elTotal.textContent = plans.length;
-    if (elPlanned) {
-      elPlanned.innerHTML = `${planned.length} ${inBuyZoneCount > 0 ? `<span class="badge badge-gain" style="font-size:.75rem;margin-left:.35rem">🎯 ${inBuyZoneCount} in Buy Zone</span>` : ''}`;
+    if (elCardBudget) elCardBudget.textContent = formatCurrency(budgetStats.totalAvailable);
+    if (elCardBudgetSub) {
+      if (budgetStats.carriedForward > 0) {
+        elCardBudgetSub.innerHTML = `<span style="color:var(--primary);font-weight:600">+${formatCurrency(budgetStats.carriedForward)}</span> carried fwd`;
+      } else {
+        elCardBudgetSub.textContent = `Target: ${formatCurrency(budgetStats.baseTarget)}`;
+      }
     }
-    if (elExecuted) elExecuted.textContent = executed.length;
-    if (elValue) elValue.textContent = Utils.formatCurrency(totalPlannedValue);
+
+    if (elCardExecutedVal) elCardExecutedVal.textContent = formatCurrency(budgetStats.consumed);
+    if (elCardExecutedCount) {
+      elCardExecutedCount.textContent = `${budgetStats.executedCount} plan${budgetStats.executedCount === 1 ? '' : 's'} executed`;
+    }
+
+    if (elCardRemaining) {
+      elCardRemaining.textContent = formatCurrency(budgetStats.remaining);
+      elCardRemaining.className = 'card-value ' + (budgetStats.remaining >= 0 ? 'gain' : 'loss');
+    }
+    if (elCardRemainingSub) {
+      elCardRemainingSub.textContent = budgetStats.remaining >= 0
+        ? `Available for next plans`
+        : 'Exceeded available budget';
+    }
+
+    if (elCardValue) elCardValue.textContent = formatCurrency(budgetStats.activePlannedValue);
+    if (elCardPlannedCount) {
+      elCardPlannedCount.innerHTML = `${planned.length} planned ${inBuyZoneCount > 0 ? `<span class="badge badge-gain" style="font-size:.75rem;margin-left:.35rem">🎯 ${inBuyZoneCount} in Buy Zone</span>` : ''}`;
+    }
+
+    // Month Progress & Carry-forward Bar
+    const elMonthTitle = document.getElementById('plan-month-title');
+    const elStatBaseTarget = document.getElementById('plan-stat-base-target');
+    const elStatCarryForward = document.getElementById('plan-stat-carry-forward');
+    const elStatConsumed = document.getElementById('plan-stat-consumed');
+    const elStatRemaining = document.getElementById('plan-stat-remaining');
+    const elProgressBar = document.getElementById('plan-progress-bar');
+    const elProgressPct = document.getElementById('plan-progress-pct');
+    const elProgressTarget = document.getElementById('plan-progress-target');
+
+    if (elMonthTitle) {
+      elMonthTitle.textContent = budgetStats.monthKey === 'all' ? 'All Months Overview' : `${monthLabel(budgetStats.monthKey)} Plan Budget`;
+    }
+    if (elStatBaseTarget) elStatBaseTarget.textContent = formatCurrency(budgetStats.baseTarget);
+    if (elStatCarryForward) {
+      elStatCarryForward.textContent = budgetStats.carriedForward > 0 ? `+${formatCurrency(budgetStats.carriedForward)}` : '₹0.00';
+    }
+    if (elStatConsumed) elStatConsumed.textContent = formatCurrency(budgetStats.consumed);
+    if (elStatRemaining) {
+      if (budgetStats.remaining > 0) {
+        elStatRemaining.innerHTML = `<span style="color:var(--gain);font-weight:600">${formatCurrency(budgetStats.remaining)} left</span>`;
+      } else {
+        elStatRemaining.innerHTML = `<span style="color:var(--text-muted)">₹0.00 fully utilized</span>`;
+      }
+    }
+
+    const pctConsumed = budgetStats.totalAvailable > 0 ? (budgetStats.consumed / budgetStats.totalAvailable) * 100 : 0;
+    const clampedPct = clamp(pctConsumed, 0, 100);
+
+    if (elProgressBar) {
+      elProgressBar.style.width = clampedPct + '%';
+      elProgressBar.className = 'progress-bar' + (pctConsumed >= 100 ? ' over' : '');
+    }
+    if (elProgressPct) {
+      elProgressPct.textContent = `${Math.round(pctConsumed)}% consumed (${formatCurrency(budgetStats.consumed)})`;
+    }
+    if (elProgressTarget) {
+      elProgressTarget.textContent = `Available Budget: ${formatCurrency(budgetStats.totalAvailable)}`;
+    }
+  }
+
+  /* ---- MONTH SELECTOR POPULATION ---- */
+  function populateMonthSelector() {
+    const sel = document.getElementById('plan-month-select');
+    if (!sel) return;
+
+    const funds = Storage.getFunds();
+    const plans = Storage.getPlans();
+    const monthKeysSet = new Set();
+    monthKeysSet.add(currentMonthKey());
+
+    if (funds && Array.isArray(funds.transactions)) {
+      funds.transactions.forEach(t => {
+        if (t && t.date) {
+          const k = getMonthKey(t.date);
+          if (k) monthKeysSet.add(k);
+        }
+      });
+    }
+
+    plans.forEach(p => {
+      if (p.executedMonthKey) monthKeysSet.add(p.executedMonthKey);
+      if (p.monthKey) monthKeysSet.add(p.monthKey);
+    });
+
+    const sortedKeys = Array.from(monthKeysSet).sort().reverse();
+
+    sel.innerHTML = `<option value="all" ${selectedMonthKey === 'all' ? 'selected' : ''}>— All Months —</option>` +
+      sortedKeys.map(k => `<option value="${k}" ${k === selectedMonthKey ? 'selected' : ''}>${monthLabel(k)}</option>`).join('');
   }
 
   /* ---- RENDER PLANS TABLE ---- */
@@ -36,17 +246,37 @@
     const plans = Storage.getPlans();
     const tbody = document.getElementById('plan-tbody');
     const tfoot = document.getElementById('plan-tfoot');
+    const tableTitle = document.getElementById('plan-table-title');
     if (!tbody) return;
 
-    updateSummaryCards(plans);
+    populateMonthSelector();
 
-    if (plans.length === 0) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="10" style="padding:2rem;text-align:center;color:var(--text-muted)">No purchase plans yet. Click <strong>+ Add Plan</strong> to set target prices for stocks you want to buy.</td></tr>';
+    const budgetStats = calcMonthlyPlanBudget(selectedMonthKey);
+
+    // Filter plans for selected month
+    const filteredPlans = plans.filter(p => {
+      if (selectedMonthKey === 'all') return true;
+      if (p.status === 'executed') {
+        const execM = p.executedMonthKey || (p.executedAt ? getMonthKey(p.executedAt) : null) || p.monthKey || currentMonthKey();
+        return execM === selectedMonthKey;
+      }
+      const planM = p.monthKey || currentMonthKey();
+      return planM === selectedMonthKey;
+    });
+
+    updateSummaryCards(budgetStats, filteredPlans);
+
+    if (tableTitle) {
+      tableTitle.textContent = selectedMonthKey === 'all' ? 'All Investment Plans' : `${monthLabel(selectedMonthKey)} Investment Plans`;
+    }
+
+    if (filteredPlans.length === 0) {
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="10" style="padding:2rem;text-align:center;color:var(--text-muted)">No purchase plans for <strong>${selectedMonthKey === 'all' ? 'any month' : monthLabel(selectedMonthKey)}</strong>. Click <strong>+ Add Plan</strong> to schedule purchase targets.</td></tr>`;
       if (tfoot) tfoot.innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = plans.map(plan => {
+    tbody.innerHTML = filteredPlans.map(plan => {
       const isExecuted = plan.status === 'executed';
       const targetValue = plan.qty * plan.targetPrice;
       const pData = Storage.getPrice(plan.symbol);
@@ -56,17 +286,18 @@
       let statusBadge = '';
 
       if (isExecuted) {
-        statusBadge = '<span class="badge badge-executed">&#10003; Executed</span>';
+        const execDate = plan.executedAt ? formatDate(plan.executedAt) : '';
+        statusBadge = `<span class="badge badge-executed" title="Executed on ${execDate}">&#10003; Executed</span>`;
       } else if (ltp != null) {
         const diff = ((ltp - plan.targetPrice) / plan.targetPrice) * 100;
         const diffAbs = Math.abs(diff).toFixed(1);
         const sign = diff >= 0 ? '+' : '-';
 
         if (ltp <= plan.targetPrice) {
-          ltpDisplay = `<strong>${Utils.formatCurrency(ltp)}</strong> <span class="badge badge-gain" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
+          ltpDisplay = `<strong>${formatCurrency(ltp)}</strong> <span class="badge badge-gain" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
           statusBadge = '<span class="badge badge-gain" title="Market price is at or below your target price!">🎯 Buy Zone</span>';
         } else {
-          ltpDisplay = `${Utils.formatCurrency(ltp)} <span class="badge badge-loss" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
+          ltpDisplay = `${formatCurrency(ltp)} <span class="badge badge-loss" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
           statusBadge = `<span class="badge badge-planned" title="Market price is ${diffAbs}% above target">Above Target</span>`;
         }
       } else {
@@ -85,22 +316,26 @@
       }
 
       const catBadge = plan.categoryId
-        ? `<span class="exchange-badge" style="background:#ede9fe;color:#5b21b6">${Utils.escHtml(plan.categoryId.replace(/-/g, ' '))}</span> `
+        ? `<span class="exchange-badge" style="background:#ede9fe;color:#5b21b6">${escHtml(plan.categoryId.replace(/-/g, ' '))}</span> `
+        : '';
+
+      const monthTag = (plan.monthKey && plan.monthKey !== currentMonthKey())
+        ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">📅 ${monthLabel(plan.monthKey)}</div>`
         : '';
 
       return `<tr>
-        <td><strong>${Utils.escHtml(plan.symbol)}</strong></td>
-        <td>${catBadge}<span class="exchange-badge">${Utils.escHtml(plan.exchange || 'NSE')}</span></td>
+        <td><strong>${escHtml(plan.symbol)}</strong>${monthTag}</td>
+        <td>${catBadge}<span class="exchange-badge">${escHtml(plan.exchange || 'NSE')}</span></td>
         <td>${priorityBadge}</td>
         <td>${plan.qty}</td>
-        <td><strong>${Utils.formatCurrency(plan.targetPrice)}</strong></td>
+        <td><strong>${formatCurrency(plan.targetPrice)}</strong></td>
         <td>${ltpDisplay}</td>
-        <td>${Utils.formatCurrency(targetValue)}</td>
+        <td><strong>${formatCurrency(targetValue)}</strong></td>
         <td>${statusBadge}</td>
-        <td class="col-hide-md" style="font-size:.85rem;color:var(--text-muted)">${Utils.escHtml(plan.notes || '—')}</td>
+        <td class="col-hide-md" style="font-size:.85rem;color:var(--text-muted)">${escHtml(plan.notes || '—')}</td>
         <td>
           <div class="actions-cell">
-            ${!isExecuted ? `<button class="action-btn execute-plan-btn" data-id="${plan.id}" title="Execute — add to Holdings" style="color:var(--gain);background:#ecfdf5;border-color:#a7f3d0">&#10003; Execute</button>` : ''}
+            ${!isExecuted ? `<button class="action-btn execute-plan-btn" data-id="${plan.id}" title="Execute — add to Holdings and consume fund budget" style="color:var(--gain);background:#ecfdf5;border-color:#a7f3d0;font-weight:600">&#10003; Execute</button>` : ''}
             ${!isExecuted ? `<button class="action-btn edit-plan-btn" data-id="${plan.id}" title="Edit Plan">&#9998;</button>` : ''}
             <button class="action-btn delete-plan-btn" data-id="${plan.id}" title="Delete Plan">&#128465;</button>
           </div>
@@ -108,23 +343,23 @@
       </tr>`;
     }).join('');
 
-    const plannedTotal = plans
+    const plannedTotal = filteredPlans
       .filter(p => p.status === 'planned')
       .reduce((s, p) => s + (p.qty * p.targetPrice), 0);
-    const executedTotal = plans
+    const executedTotal = filteredPlans
       .filter(p => p.status === 'executed')
       .reduce((s, p) => s + (p.qty * p.targetPrice), 0);
 
     if (tfoot) {
       tfoot.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Total Planned Capital:</td>
-          <td style="font-weight:700;color:var(--primary)">${Utils.formatCurrency(plannedTotal)}</td>
+          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Active Planned Capital:</td>
+          <td style="font-weight:700;color:var(--primary)">${formatCurrency(plannedTotal)}</td>
           <td colspan="3"></td>
         </tr>
         <tr>
-          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Total Executed:</td>
-          <td style="font-weight:700;color:var(--gain)">${Utils.formatCurrency(executedTotal)}</td>
+          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Consumed in Executed:</td>
+          <td style="font-weight:700;color:var(--gain)">${formatCurrency(executedTotal)}</td>
           <td colspan="3"></td>
         </tr>
       `;
@@ -138,7 +373,7 @@
     if (!sel) return;
     const cur = sel.value;
     sel.innerHTML = '<option value="">— Type symbol manually —</option>' +
-      Object.values(wl).map(cat => `<option value="${cat.id}">${Utils.escHtml(cat.name)} (${cat.stocks.length})</option>`).join('');
+      Object.values(wl).map(cat => `<option value="${cat.id}">${escHtml(cat.name)} (${cat.stocks.length})</option>`).join('');
     if (cur) sel.value = cur;
   }
 
@@ -162,7 +397,7 @@
       stockSel.innerHTML = '<option value="">— Select stock —</option>' +
         stocks.map(s => {
           const sign = s.changePct >= 0 ? '+' : '';
-          return `<option value="${Utils.escHtml(s.symbol)}" data-ltp="${s.ltp || ''}">${Utils.escHtml(s.symbol)} — ₹${(s.ltp || 0).toFixed(2)} (${sign}${(s.changePct || 0).toFixed(2)}%)</option>`;
+          return `<option value="${escHtml(s.symbol)}" data-ltp="${s.ltp || ''}">${escHtml(s.symbol)} — ₹${(s.ltp || 0).toFixed(2)} (${sign}${(s.changePct || 0).toFixed(2)}%)</option>`;
         }).join('');
     }
 
@@ -204,6 +439,12 @@
     document.getElementById('p-symbol').value = '';
     const prioEl = document.getElementById('p-priority');
     if (prioEl) prioEl.value = 'medium';
+
+    const monthInput = document.getElementById('p-month');
+    if (monthInput) {
+      monthInput.value = (selectedMonthKey && selectedMonthKey !== 'all') ? selectedMonthKey : currentMonthKey();
+    }
+
     document.getElementById('plan-modal-title').textContent = 'Add Stock Purchase Plan';
 
     refreshCategorySelect();
@@ -229,6 +470,12 @@
     document.getElementById('p-exchange').value = plan.exchange || 'NSE';
     const prioEl = document.getElementById('p-priority');
     if (prioEl) prioEl.value = plan.priority || 'medium';
+
+    const monthInput = document.getElementById('p-month');
+    if (monthInput) {
+      monthInput.value = plan.monthKey || currentMonthKey();
+    }
+
     document.getElementById('plan-modal-title').textContent = 'Edit Stock Purchase Plan';
 
     refreshCategorySelect();
@@ -261,6 +508,8 @@
     const notes = document.getElementById('p-notes').value.trim();
     const prioEl = document.getElementById('p-priority');
     const priority = prioEl ? prioEl.value : 'medium';
+    const monthEl = document.getElementById('p-month');
+    const monthKey = (monthEl && monthEl.value) ? monthEl.value : (selectedMonthKey !== 'all' ? selectedMonthKey : currentMonthKey());
 
     let symbol = '';
     let valid = true;
@@ -296,16 +545,19 @@
 
     const existing = id ? Storage.getPlans().find(p => p.id === id) : null;
     const plan = {
-      id: id || Utils.generateId(),
+      id: id || generateId(),
       symbol: symbol,
       exchange: exchange,
       qty: qty,
       targetPrice: price,
       priority: priority,
       notes: notes,
+      monthKey: monthKey,
       categoryId: catId || null,
       status: existing ? existing.status : 'planned',
       holdingId: existing ? existing.holdingId : null,
+      executedMonthKey: existing ? existing.executedMonthKey : null,
+      executedAt: existing ? existing.executedAt : null,
       updatedAt: new Date().toISOString()
     };
 
@@ -320,22 +572,31 @@
     }
   }
 
-  /* ---- EXECUTE PLAN ---- */
+  /* ---- EXECUTE PLAN (CONSUMES MONTHLY FUND BUDGET) ---- */
   function executePlan(id) {
     const plan = Storage.getPlans().find(p => p.id === id);
     if (!plan || plan.status === 'executed') return;
 
     const targetVal = plan.qty * plan.targetPrice;
+    const execMonth = (selectedMonthKey && selectedMonthKey !== 'all') ? selectedMonthKey : (plan.monthKey || currentMonthKey());
+    const budgetStats = calcMonthlyPlanBudget(execMonth);
+
+    const remainingAfter = budgetStats.remaining - targetVal;
+
     const confirmText = document.getElementById('confirm-text');
     const confirmBtn = document.getElementById('btn-confirm-ok');
 
     confirmText.innerHTML = `
-      Execute Plan for <strong>${Utils.escHtml(plan.symbol)}</strong>?<br>
+      Execute Plan for <strong>${escHtml(plan.symbol)}</strong>?<br>
       <div style="margin-top:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;font-size:.9rem">
-        <div>Qty: <strong>${plan.qty}</strong> @ <strong>${Utils.formatCurrency(plan.targetPrice)}</strong></div>
-        <div style="margin-top:.25rem">Total Invested: <strong>${Utils.formatCurrency(targetVal)}</strong></div>
+        <div>Qty: <strong>${plan.qty}</strong> @ <strong>${formatCurrency(plan.targetPrice)}</strong></div>
+        <div style="margin-top:.25rem">Total Invested: <strong style="color:var(--gain)">${formatCurrency(targetVal)}</strong></div>
+        <div style="margin-top:.35rem;padding-top:.35rem;border-top:1px dashed #e2e8f0;font-size:.82rem;color:var(--text-muted)">
+          Consumes from <strong>${monthLabel(execMonth)}</strong> budget:
+          <br>Remaining after execution: <strong style="color:${remainingAfter >= 0 ? 'var(--gain)' : 'var(--loss)'}">${formatCurrency(Math.max(0, remainingAfter))}</strong>
+        </div>
       </div>
-      <p style="margin-top:.75rem;font-size:.85rem;color:var(--text-muted)">This will add <strong>${Utils.escHtml(plan.symbol)}</strong> to your Holdings list.</p>
+      <p style="margin-top:.75rem;font-size:.85rem;color:var(--text-muted)">This will add <strong>${escHtml(plan.symbol)}</strong> to your Holdings and consume from your targeted monthly fund.</p>
     `;
 
     function handler() {
@@ -343,7 +604,7 @@
       App.closeModal('modal-confirm');
 
       const now = new Date().toISOString();
-      const holdingId = plan.holdingId || Utils.generateId();
+      const holdingId = plan.holdingId || generateId();
 
       Storage.upsertHolding({
         id: holdingId,
@@ -361,6 +622,7 @@
         ...plan,
         status: 'executed',
         holdingId: holdingId,
+        executedMonthKey: execMonth,
         executedAt: now,
         updatedAt: now
       });
@@ -368,7 +630,7 @@
       if (window.Holdings) Holdings.render();
       if (window.Funds) Funds.render();
       renderPlans();
-      App.toast(`${plan.symbol} successfully added to Holdings!`, 'success');
+      App.toast(`${plan.symbol} executed! ₹${Math.round(targetVal).toLocaleString('en-IN')} consumed from ${monthLabel(execMonth)} budget.`, 'success');
 
       if (window.PriceService) {
         PriceService.fetchOne(plan.symbol, plan.exchange);
@@ -388,7 +650,7 @@
     const confirmText = document.getElementById('confirm-text');
     const confirmBtn = document.getElementById('btn-confirm-ok');
 
-    confirmText.innerHTML = `Delete purchase plan for <strong>${Utils.escHtml(plan.symbol)}</strong>?`;
+    confirmText.innerHTML = `Delete purchase plan for <strong>${escHtml(plan.symbol)}</strong>?`;
 
     function handler() {
       confirmBtn.removeEventListener('click', handler);
@@ -427,11 +689,19 @@
     const btnSave = document.getElementById('btn-save-plan');
     const catSel = document.getElementById('p-category');
     const stockSel = document.getElementById('p-stock-select');
+    const monthSel = document.getElementById('plan-month-select');
 
     if (btnAdd) btnAdd.addEventListener('click', openAddModal);
     if (btnSave) btnSave.addEventListener('click', validateAndSave);
     if (catSel) catSel.addEventListener('change', onCategoryChange);
     if (stockSel) stockSel.addEventListener('change', onStockSelectChange);
+
+    if (monthSel) {
+      monthSel.addEventListener('change', e => {
+        selectedMonthKey = e.target.value;
+        renderPlans();
+      });
+    }
 
     const modalPlan = document.getElementById('modal-plan');
     if (modalPlan) {
@@ -460,6 +730,7 @@
   window.Plan = {
     init,
     render: renderPlans,
+    calcMonthlyPlanBudget,
     refreshPlanPrices
   };
 })();
