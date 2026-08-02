@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  /* ---- BUILT-IN NIFTY PRESETS (Parsed from NSE constituent data) ---- */
+  /* ---- BUILT-IN NIFTY PRESETS (All 11 NSE Sectoral Watchlists) ---- */
   const NIFTY_PRESETS = {
     "NIFTY-100": {
         "id": "NIFTY-100",
@@ -2055,9 +2055,31 @@
   }
 
   function cleanCategoryName(filename) {
-    let name = filename.replace(/^MW-/i, '').replace(/-\d{1,2}-[A-Za-z]+-\d{4}\.(csv|xlsx|xls)$/i, '').replace(/\.(csv|xlsx|xls)$/i, '');
+    let name = String(filename || '')
+      .replace(/^MW[-_]/i, '')
+      .replace(/-\d{1,2}-[A-Za-z]+-\d{4}\.(csv|xlsx|xls)$/i, '')
+      .replace(/\([0-9]+\)/g, '')
+      .replace(/\.(csv|xlsx|xls)$/i, '');
     name = name.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
     return name || 'CUSTOM WATCHLIST';
+  }
+
+  /* ---- FALLBACK MANUAL CSV PARSER ---- */
+  function parseCSVTextManual(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    return lines.map(line => {
+      const res = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') inQuotes = !inQuotes;
+        else if (ch === ',' && !inQuotes) { res.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      res.push(cur.trim());
+      return res;
+    });
   }
 
   /* ---- EXCEL & CSV FILE PARSER ---- */
@@ -2089,17 +2111,33 @@
         reader.onload = e => {
           try {
             const text = e.target.result;
-            Papa.parse(text, {
-              skipEmptyLines: true,
-              complete: result => {
-                const cat = processRawRows(result.data, file.name);
-                resolve(cat);
-              },
-              error: err => {
-                console.error('CSV parse error:', err);
-                resolve(null);
-              }
-            });
+            // First try Papa.parse
+            if (typeof Papa !== 'undefined') {
+              Papa.parse(text, {
+                skipEmptyLines: true,
+                complete: result => {
+                  let cat = null;
+                  if (result && Array.isArray(result.data) && result.data.length > 0) {
+                    cat = processRawRows(result.data, file.name);
+                  }
+                  if (!cat) {
+                    // Fallback to manual line parser
+                    const manualRows = parseCSVTextManual(text);
+                    cat = processRawRows(manualRows, file.name);
+                  }
+                  resolve(cat);
+                },
+                error: () => {
+                  const manualRows = parseCSVTextManual(text);
+                  const cat = processRawRows(manualRows, file.name);
+                  resolve(cat);
+                }
+              });
+            } else {
+              const manualRows = parseCSVTextManual(text);
+              const cat = processRawRows(manualRows, file.name);
+              resolve(cat);
+            }
           } catch (err) {
             console.error('CSV reader error:', err);
             resolve(null);
@@ -2112,33 +2150,37 @@
   }
 
   function processRawRows(rawRows, filename) {
-    if (!rawRows || rawRows.length < 2) return null;
+    if (!rawRows || !Array.isArray(rawRows) || rawRows.length < 2) return null;
 
     let headerIdx = -1;
     for (let i = 0; i < Math.min(rawRows.length, 10); i++) {
-      const row = rawRows[i].map(c => String(c).trim().toUpperCase());
-      if (row.some(c => c.includes('SYMBOL') || c.includes('SECURITY') || c.includes('STOCK'))) {
+      if (!Array.isArray(rawRows[i])) continue;
+      const row = rawRows[i].map(c => String(c || '').replace(/^\uFEFF/, '').trim().toUpperCase());
+      if (row.some(c => c.includes('SYMBOL') || c.includes('SECURITY') || c.includes('STOCK') || c.includes('TICKER') || c.includes('COMPANY') || c.includes('NAME'))) {
         headerIdx = i;
         break;
       }
     }
 
     let rawCategoryName = '';
-    if (headerIdx > 0 && rawRows[0][0]) {
-      rawCategoryName = String(rawRows[0][0]).trim();
+    if (headerIdx > 0 && Array.isArray(rawRows[0]) && rawRows[0][0]) {
+      const topCell = String(rawRows[0][0]).replace(/^\uFEFF/, '').trim();
+      if (topCell && !topCell.toUpperCase().includes('SYMBOL') && topCell.length > 2) {
+        rawCategoryName = topCell;
+      }
     }
     if (!rawCategoryName) {
       rawCategoryName = cleanCategoryName(filename);
     }
 
-    const headers = (headerIdx !== -1 ? rawRows[headerIdx] : rawRows[0]).map(c => String(c).trim().toUpperCase());
+    const headers = (headerIdx !== -1 && Array.isArray(rawRows[headerIdx]) ? rawRows[headerIdx] : rawRows[0]).map(c => String(c || '').replace(/^\uFEFF/, '').trim().toUpperCase());
     const dataRows = rawRows.slice(headerIdx !== -1 ? headerIdx + 1 : 1);
 
-    const symbolCol = headers.findIndex(h => h.includes('SYMBOL') || h.includes('TICKER') || h.includes('SECURITY'));
-    const ltpCol = headers.findIndex(h => h.includes('LTP') || h.includes('PRICE') || h.includes('LAST') || h.includes('CLOSE'));
+    const symbolCol = headers.findIndex(h => h.includes('SYMBOL') || h.includes('TICKER') || h.includes('SECURITY') || h.includes('STOCK') || h.includes('COMPANY') || h.includes('NAME'));
+    const ltpCol = headers.findIndex(h => h.includes('LTP') || h.includes('PRICE') || h.includes('LAST') || h.includes('CLOSE') || h.includes('RATE') || h.includes('VAL'));
     const chgCol = headers.findIndex(h => h.includes('%') || h.includes('CHG') || h.includes('CHANGE'));
-    const highCol = headers.findIndex(h => h.includes('52W H') || h.includes('HIGH') || h.includes('52 W H'));
-    const lowCol = headers.findIndex(h => h.includes('52W L') || h.includes('LOW') || h.includes('52 W L'));
+    const highCol = headers.findIndex(h => h.includes('52W H') || h.includes('HIGH') || h.includes('52 W H') || h.includes('52WH'));
+    const lowCol = headers.findIndex(h => h.includes('52W L') || h.includes('LOW') || h.includes('52 W L') || h.includes('52WL'));
 
     if (symbolCol === -1) return null;
 
@@ -2146,9 +2188,9 @@
     const seen = new Set();
 
     dataRows.forEach(row => {
-      if (!row || !row[symbolCol]) return;
-      let sym = String(row[symbolCol]).replace(/[",]/g, '').trim().toUpperCase();
-      if (!sym || sym.startsWith('NIFTY') || sym === 'SYMBOL' || sym.startsWith('INDEX') || sym === '-') return;
+      if (!row || !Array.isArray(row) || !row[symbolCol]) return;
+      let sym = String(row[symbolCol]).replace(/^\uFEFF/, '').replace(/[",]/g, '').trim().toUpperCase();
+      if (!sym || sym.startsWith('NIFTY') || sym === 'SYMBOL' || sym.startsWith('INDEX') || sym === '-' || sym === 'TOTAL') return;
 
       sym = window.PriceService ? PriceService.cleanSymbol(sym) : sym;
       if (!sym || seen.has(sym)) return;
@@ -2165,7 +2207,7 @@
 
     if (stocks.length === 0) return null;
 
-    const catId = rawCategoryName.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toUpperCase();
+    const catId = rawCategoryName.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toUpperCase() || 'CUSTOM-LIST';
 
     const categoryObj = {
       id: catId,
@@ -2219,7 +2261,11 @@
   }
 
   function loadAllPresets() {
-    Object.values(NIFTY_PRESETS).forEach(preset => {
+    const keys = Object.keys(NIFTY_PRESETS);
+    let totalStocks = 0;
+    keys.forEach(k => {
+      const preset = NIFTY_PRESETS[k];
+      totalStocks += preset.stocks.length;
       Storage.upsertWatchlistCategory({
         id: preset.id,
         name: preset.name,
@@ -2229,7 +2275,7 @@
     });
 
     renderWatchlist();
-    App.toast(`All ${Object.keys(NIFTY_PRESETS).length} NIFTY Sectoral Watchlists successfully loaded!`, 'success');
+    App.toast(`All ${keys.length} NIFTY Sectoral Watchlists (${totalStocks} stocks) loaded!`, 'success');
   }
 
   /* ---- RENDER CATEGORY GRID ---- */
