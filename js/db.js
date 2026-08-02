@@ -2,16 +2,32 @@
   'use strict';
 
   const SYNC_KEYS = ['holdings', 'funds', 'plans', 'settings', 'watchlist'];
+  const DB_URL_STORAGE_KEY = 'spp_db_url';
   let dbRef = null;
   let enabled = false;
   let isSyncing = false;
   let debounceTimer = null;
+  let lastError = null;
+
+  function getDatabaseURL() {
+    return localStorage.getItem(DB_URL_STORAGE_KEY) || (window.FIREBASE_CONFIG ? window.FIREBASE_CONFIG.databaseURL : '');
+  }
+
+  function setDatabaseURL(url) {
+    if (url) {
+      localStorage.setItem(DB_URL_STORAGE_KEY, url.trim());
+      if (window.FIREBASE_CONFIG) window.FIREBASE_CONFIG.databaseURL = url.trim();
+    } else {
+      localStorage.removeItem(DB_URL_STORAGE_KEY);
+    }
+  }
 
   function isConfigured() {
     const cfg = window.FIREBASE_CONFIG;
+    const url = getDatabaseURL();
     return cfg &&
-      cfg.databaseURL &&
-      cfg.databaseURL !== 'https://YOUR-PROJECT-default-rtdb.firebaseio.com' &&
+      url &&
+      url !== 'https://YOUR-PROJECT-default-rtdb.firebaseio.com' &&
       cfg.apiKey !== 'YOUR-API-KEY';
   }
 
@@ -21,20 +37,38 @@
 
   function updateSyncUI(status, label) {
     const statusEl = document.getElementById('cloud-sync-status');
-    if (!statusEl) return;
+    const diagStatus = document.getElementById('cloud-diag-status');
+    const diagDetail = document.getElementById('cloud-diag-detail');
 
     if (status === 'connected') {
-      statusEl.innerHTML = '<span class="sync-dot connected"></span> <span class="sync-text">Cloud Synced</span>';
-      statusEl.title = 'Real-time Firebase Cloud connection active';
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="sync-dot connected"></span> <span class="sync-text">Cloud Synced</span>';
+        statusEl.title = 'Real-time Firebase Cloud connection active (click to configure)';
+      }
+      if (diagStatus) diagStatus.innerHTML = '<span class="sync-dot connected"></span> Connected & Synced';
+      if (diagDetail) diagDetail.textContent = 'Active database: ' + getDatabaseURL();
+      lastError = null;
     } else if (status === 'syncing') {
-      statusEl.innerHTML = '<span class="sync-dot syncing"></span> <span class="sync-text">Syncing...</span>';
-      statusEl.title = 'Syncing updates with Firebase Cloud...';
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="sync-dot syncing"></span> <span class="sync-text">Syncing...</span>';
+        statusEl.title = 'Syncing updates with Firebase Cloud...';
+      }
+      if (diagStatus) diagStatus.innerHTML = '<span class="sync-dot syncing"></span> Syncing...';
     } else if (status === 'error') {
-      statusEl.innerHTML = '<span class="sync-dot error"></span> <span class="sync-text">Sync Error</span>';
-      statusEl.title = label || 'Firebase Cloud connection error';
+      lastError = label || 'Firebase Cloud connection error';
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="sync-dot error"></span> <span class="sync-text">Sync Error</span>';
+        statusEl.title = 'Cloud Error: ' + lastError + ' (click to fix database URL)';
+      }
+      if (diagStatus) diagStatus.innerHTML = '<span class="sync-dot error"></span> Disconnected / Setup Needed';
+      if (diagDetail) diagDetail.innerHTML = '<span style="color:#ef4444">' + (label || 'Database not found or permission denied. Check URL in Firebase Console.') + '</span>';
     } else {
-      statusEl.innerHTML = '<span class="sync-dot offline"></span> <span class="sync-text">Local Only</span>';
-      statusEl.title = 'Using localStorage only';
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="sync-dot offline"></span> <span class="sync-text">Local Only</span>';
+        statusEl.title = 'Using localStorage only (click to connect Firebase)';
+      }
+      if (diagStatus) diagStatus.innerHTML = '<span class="sync-dot offline"></span> Local Mode (Not Connected)';
+      if (diagDetail) diagDetail.textContent = 'Configure Realtime Database to enable multi-device sync.';
     }
   }
 
@@ -51,14 +85,17 @@
         })
         .catch(e => {
           console.warn('DB push failed for key:', key, e);
-          updateSyncUI('error', 'Push failed');
+          updateSyncUI('error', 'Write failed: ' + (e.message || e));
         });
     }, 400);
   }
 
   /* Upload all current localStorage data to Firebase (migration or manual sync) */
   async function pushAll() {
-    if (!dbRef) return;
+    if (!dbRef) {
+      const ok = await init();
+      if (!ok) throw new Error(lastError || 'Cannot connect to database');
+    }
     updateSyncUI('syncing');
     const P = getPrefix();
     const data = {};
@@ -94,14 +131,24 @@
 
     try {
       updateSyncUI('syncing');
+      const activeURL = getDatabaseURL();
+      const config = { ...window.FIREBASE_CONFIG, databaseURL: activeURL };
+
       if (!firebase.apps.length) {
-        firebase.initializeApp(window.FIREBASE_CONFIG);
+        firebase.initializeApp(config);
+      } else {
+        // Re-init with new databaseURL if needed
+        try {
+          firebase.app().delete();
+          firebase.initializeApp(config);
+        } catch (_) {}
       }
+
       dbRef = firebase.database().ref('portfolio');
 
       // Timeout promise to prevent blocking boot if Firebase RTDB is slow/offline
       const fetchPromise = dbRef.once('value');
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout (3s)')), 3000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout. Please check your Realtime Database URL in Firebase Console.')), 3500));
       const snap = await Promise.race([fetchPromise, timeoutPromise]);
       const remote = snap ? snap.val() : null;
 
@@ -136,6 +183,8 @@
       return true;
     } catch (e) {
       console.error('Firebase init failed:', e);
+      enabled = false;
+      dbRef = null;
       updateSyncUI('error', e.message);
       return false;
     }
@@ -146,6 +195,8 @@
     push,
     pushAll,
     pull,
+    getDatabaseURL,
+    setDatabaseURL,
     isEnabled: () => enabled,
     updateSyncUI
   };

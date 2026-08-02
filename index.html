@@ -565,6 +565,51 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: CLOUD SYNC & FIREBASE SETUP ===================== -->
+<div class="modal-backdrop" id="modal-cloud-sync">
+  <div class="modal" style="max-width:560px" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title">☁️ Firebase Cloud Database Sync</div>
+      <button class="modal-close" data-close="modal-cloud-sync">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg);padding:1rem;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem">
+        <div style="font-size:.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:.3rem">Connection Status</div>
+        <div id="cloud-diag-status" style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:.5rem">
+          <span class="sync-dot offline"></span> Checking...
+        </div>
+        <div id="cloud-diag-detail" style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-db-url">Firebase Realtime Database URL</label>
+        <input class="form-control" id="input-db-url" type="text" placeholder="https://stock-portfolio-6b893-default-rtdb.firebaseio.com">
+        <div class="form-hint" style="margin-top:.4rem">
+          Find your URL in <b>Firebase Console → Build → Realtime Database</b> at the top of the Data tab.
+        </div>
+      </div>
+
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius);padding:.85rem;margin-top:1rem;font-size:.8rem;color:#0369a1;line-height:1.5">
+        <b>💡 Quick Setup Instructions:</b><br>
+        1. Open <a href="https://console.firebase.google.com/project/stock-portfolio-6b893/database" target="_blank" style="color:#0284c7;font-weight:600">Firebase Realtime Database Console</a>.<br>
+        2. Click <b>"Create Database"</b> if not already created (choose <i>Start in test mode</i>).<br>
+        3. Copy the URL at the top (e.g. <code>https://stock-portfolio-6b893...firebasedatabase.app</code>) and paste above.<br>
+        4. In the <b>Rules</b> tab, ensure <code>".read": true, ".write": true</code>.
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-secondary btn-sm" id="btn-cloud-pull" title="Download latest data from cloud">⬇️ Pull from Cloud</button>
+        <button class="btn btn-secondary btn-sm" id="btn-cloud-push" title="Upload local data to cloud">⬆️ Push to Cloud</button>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-secondary" data-close="modal-cloud-sync">Close</button>
+        <button class="btn btn-primary" id="btn-save-db-url">Save &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== CDN LIBRARIES ===================== -->
 <!-- Papa Parse: CSV parsing -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>

@@ -213,29 +213,83 @@
 
     updateTopbarMeta();
 
-    // Wire up Cloud Sync badge click to trigger manual sync
+    // Wire up Cloud Sync badge click to open Cloud Setup / Diagnostics modal
     const syncBadge = document.getElementById('cloud-sync-status');
+    const inputDbUrl = document.getElementById('input-db-url');
+    const btnSaveDbUrl = document.getElementById('btn-save-db-url');
+    const btnCloudPush = document.getElementById('btn-cloud-push');
+    const btnCloudPull = document.getElementById('btn-cloud-pull');
+
     if (syncBadge) {
       syncBadge.style.cursor = 'pointer';
-      syncBadge.addEventListener('click', async () => {
-        if (window.DB && window.DB.isEnabled()) {
-          toast('Syncing data with Firebase Cloud...', 'info');
-          try {
-            await DB.pushAll();
-            toast('Firebase Cloud Sync successful!', 'success');
-          } catch (e) {
-            toast('Firebase Sync error: ' + (e.message || e), 'error');
-          }
-        } else if (window.DB) {
-          toast('Attempting to reconnect to Firebase...', 'info');
+      syncBadge.addEventListener('click', () => {
+        if (inputDbUrl && window.DB) {
+          inputDbUrl.value = DB.getDatabaseURL();
+        }
+        openModal('modal-cloud-sync');
+      });
+    }
+
+    if (btnSaveDbUrl) {
+      btnSaveDbUrl.addEventListener('click', async () => {
+        const url = (inputDbUrl ? inputDbUrl.value : '').trim();
+        if (!url) {
+          toast('Please enter a valid Firebase Realtime Database URL', 'warn');
+          return;
+        }
+        btnSaveDbUrl.disabled = true;
+        btnSaveDbUrl.textContent = 'Connecting...';
+        DB.setDatabaseURL(url);
+        toast('Testing connection to Firebase...', 'info');
+
+        const ok = await DB.init();
+        btnSaveDbUrl.disabled = false;
+        btnSaveDbUrl.textContent = 'Save & Connect';
+
+        if (ok) {
+          toast('Connected to Firebase Realtime Database!', 'success');
+          // Push local data up
+          await DB.pushAll();
+          closeModal('modal-cloud-sync');
+        } else {
+          toast('Connection failed. Make sure Database is created in Firebase Console & Rules are set.', 'error');
+        }
+      });
+    }
+
+    if (btnCloudPush) {
+      btnCloudPush.addEventListener('click', async () => {
+        btnCloudPush.disabled = true;
+        toast('Uploading local portfolio to Firebase Cloud...', 'info');
+        try {
+          await DB.pushAll();
+          toast('Upload to cloud successful!', 'success');
+        } catch (e) {
+          toast('Push failed: ' + (e.message || e), 'error');
+        }
+        btnCloudPush.disabled = false;
+      });
+    }
+
+    if (btnCloudPull) {
+      btnCloudPull.addEventListener('click', async () => {
+        btnCloudPull.disabled = true;
+        toast('Downloading portfolio from Firebase Cloud...', 'info');
+        try {
           const ok = await DB.init();
           if (ok) {
-            toast('Connected to Firebase!', 'success');
-            await DB.pushAll();
+            toast('Synced with Firebase Cloud!', 'success');
+            Holdings.render();
+            Funds.render();
+            Plan.render();
+            Watchlist.render();
           } else {
-            toast('Firebase offline. Check Realtime Database in Firebase Console.', 'warn');
+            toast('Could not download from cloud. Check connection.', 'error');
           }
+        } catch (e) {
+          toast('Pull failed: ' + (e.message || e), 'error');
         }
+        btnCloudPull.disabled = false;
       });
     }
 
