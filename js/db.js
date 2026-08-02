@@ -76,34 +76,45 @@
 
   /* Push one key to Firebase with debouncing */
   function push(key, value) {
-    if (!enabled || !dbRef) return;
+    if (!isConfigured()) return Promise.resolve();
     lastLocalWriteAt = Date.now();
     isSyncing = true;
     updateSyncUI('syncing');
 
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      // Ensure arrays (like plans, holdings) are sent as pure clean arrays
-      let cleanValue = value;
-      if ((key === 'plans' || key === 'holdings') && Array.isArray(value)) {
-        cleanValue = value.map(item => ({ ...item }));
-      }
+    return new Promise((resolve, reject) => {
+      debounceTimer = setTimeout(async () => {
+        try {
+          if (!dbRef) {
+            await init();
+          }
+          if (!dbRef) {
+            isSyncing = false;
+            return resolve();
+          }
 
-      dbRef.child(key).set(cleanValue)
-        .then(() => {
+          // Ensure arrays (like plans, holdings) are sent as pure clean arrays
+          let cleanValue = value;
+          if ((key === 'plans' || key === 'holdings') && Array.isArray(value)) {
+            cleanValue = value.map(item => ({ ...item }));
+          }
+
+          await dbRef.child(key).set(cleanValue);
           updateSyncUI('connected');
-          // Maintain brief lock to prevent echo overwrite
+          
           clearTimeout(syncCoolDownTimer);
           syncCoolDownTimer = setTimeout(() => {
             isSyncing = false;
           }, 800);
-        })
-        .catch(e => {
+          resolve();
+        } catch (e) {
           isSyncing = false;
           console.warn('DB push failed for key:', key, e);
           updateSyncUI('error', 'Write failed: ' + (e.message || e));
-        });
-    }, 100);
+          reject(e);
+        }
+      }, 50);
+    });
   }
 
   /* Upload all current localStorage data to Firebase (migration or manual sync) */
@@ -160,29 +171,27 @@
 
       if (!firebase.apps.length) {
         firebase.initializeApp(config);
-      } else {
-        try {
-          firebase.app().delete();
-          firebase.initializeApp(config);
-        } catch (_) {}
       }
 
       dbRef = firebase.database().ref('portfolio');
+      enabled = true;
 
-      // Timeout promise to prevent blocking boot if Firebase RTDB is slow/offline
-      const fetchPromise = dbRef.once('value');
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout. Please check your Realtime Database URL in Firebase Console.')), 3500));
-      const snap = await Promise.race([fetchPromise, timeoutPromise]);
-      const remote = snap ? snap.val() : null;
+      // Fetch current remote data to populate or sync
+      try {
+        const snap = await dbRef.once('value');
+        const remote = snap ? snap.val() : null;
 
-      if (!remote) {
-        // Firebase empty — push local data up (first-time migration)
-        await pushAll();
-        console.info('DB: local data migrated to Firebase');
-      } else {
-        // Firebase has data — pull it down
-        await pull(remote);
-        console.info('DB: loaded from Firebase');
+        if (!remote) {
+          // Firebase empty — push local data up (first-time migration)
+          await pushAll();
+          console.info('DB: local data migrated to Firebase');
+        } else {
+          // Firebase has data — pull it down
+          await pull(remote);
+          console.info('DB: loaded from Firebase');
+        }
+      } catch (fetchErr) {
+        console.warn('Initial Firebase snapshot warning:', fetchErr);
       }
 
       // Realtime listener for cross-tab or remote device sync
@@ -202,13 +211,11 @@
         updateSyncUI('error', err.message);
       });
 
-      enabled = true;
       updateSyncUI('connected');
       return true;
     } catch (e) {
       console.error('Firebase init failed:', e);
       enabled = false;
-      dbRef = null;
       updateSyncUI('error', e.message);
       return false;
     }

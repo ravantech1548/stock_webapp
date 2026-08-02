@@ -35,7 +35,7 @@
       localStorage.setItem(key, JSON.stringify(value));
       // Sync to Firebase if enabled (fire-and-forget; prices are not synced)
       const syncKey = SYNC_KEY_MAP[key];
-      if (syncKey && window.DB && window.DB.isEnabled()) {
+      if (syncKey && window.DB) {
         window.DB.push(syncKey, value);
       }
       return true;
