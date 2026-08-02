@@ -12,6 +12,30 @@
   // NSE segment suffixes that Yahoo Finance doesn't use
   const NSE_STRIP = /-(BE|SM|IL|BZ|GB|SG|BL|MF|GS|RL|MT|PP|EQ)$/i;
 
+  // Known symbol aliases & renames for Indian Equities
+  const SYMBOL_ALIASES = {
+    'INDIABULLS': 'IBULLSLTD',
+    'GET&D': 'GVT&D',
+    'GETD': 'GVT&D',
+    'GE T&D': 'GVT&D',
+    'GE T&D INDIA': 'GVT&D',
+    'OLA': 'OLAELEC',
+    'IBULHSGFIN': 'SAMMAANCAP',
+    'L&TFH': 'LTF',
+    'MCDOWELL-N': 'UNITDSPR',
+    'CADILAHC': 'ZYDUSLIFE',
+    'STRTECH': 'STLTECH',
+    'HEXAWARE': 'HEXT',
+    'MINDTREE': 'LTIM',
+    'LTI': 'LTIM',
+    'ADANITRANS': 'ADANIENSOL',
+    'TATAMTRDVR': 'TATAMOTORS',
+    'TATASTEELBSL': 'TATASTEEL',
+    'BAJAJ-AUTO': 'BAJAJ-AUTO',
+    'BAJAJ_AUTO': 'BAJAJ-AUTO',
+    'M&M': 'M&M'
+  };
+
   function cleanSymbol(symbol) {
     return String(symbol || '')
       .trim()
@@ -20,8 +44,13 @@
       .replace(NSE_STRIP, '');
   }
 
-  function yahooTicker(symbol, exchange) {
+  function getAliasSymbol(symbol) {
     const clean = cleanSymbol(symbol);
+    return SYMBOL_ALIASES[clean] || clean;
+  }
+
+  function yahooTicker(symbol, exchange) {
+    const clean = getAliasSymbol(symbol);
     const suffix = (exchange === 'BSE') ? (window.Config.BSE_SUFFIX || '.BO') : (window.Config.DEFAULT_EXCHANGE_SUFFIX || '.NS');
     return clean + suffix;
   }
@@ -82,14 +111,41 @@
     return raw;
   }
 
+  /* ---- SEARCH YAHOO FOR MATCHING TICKER FALLBACK ---- */
+  async function searchYahooTicker(query, exchange) {
+    const proxies = getProxies();
+    const cleanQ = cleanSymbol(query);
+    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanQ)}&quotesCount=8&newsCount=0`;
+
+    for (const proxy of proxies) {
+      const proxyUrl = buildProxyUrl(proxy, targetUrl);
+      try {
+        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
+        if (!resp.ok) continue;
+        const rawData = await resp.json();
+        const data = parseProxyResponse(rawData, proxy.type);
+        const quotes = data && data.quotes;
+        if (Array.isArray(quotes) && quotes.length > 0) {
+          const suffix = (exchange === 'BSE') ? '.BO' : '.NS';
+          const match = quotes.find(q => (q.symbol || '').toUpperCase().endsWith(suffix)) ||
+                        quotes.find(q => (q.symbol || '').toUpperCase().endsWith('.NS') || (q.symbol || '').toUpperCase().endsWith('.BO'));
+          if (match && match.symbol) {
+            return match.symbol.toUpperCase();
+          }
+        }
+      } catch (_) {
+        // try next proxy
+      }
+    }
+    return null;
+  }
+
   /* ---- FETCH BATCH QUOTES ---- */
   async function fetchQuotesBatch(tickerList) {
     if (!tickerList || tickerList.length === 0) return {};
-    const symbolsParam = encodeURIComponent(tickerList.join(','));
+    const symbolsParam = tickerList.map(t => encodeURIComponent(t)).join(',');
     const proxies = getProxies();
     const servers = (window.Config && window.Config.YAHOO_SERVERS) || ['query1', 'query2'];
-
-    let lastError = null;
 
     for (const proxy of proxies) {
       for (const server of servers) {
@@ -98,7 +154,7 @@
 
         try {
           const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(9000) });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status} on ${proxy.name}`);
+          if (!resp.ok) continue;
 
           const rawData = await resp.json();
           const data = parseProxyResponse(rawData, proxy.type);
@@ -130,20 +186,17 @@
             });
             return resultMap;
           }
-        } catch (err) {
-          lastError = err;
+        } catch (_) {
           // continue to next server/proxy
         }
       }
     }
 
-    // If batch quote failed, try single chart fallback for each symbol
     return {};
   }
 
-  /* ---- FETCH SINGLE CHART FALLBACK ---- */
-  async function fetchSingleChart(symbol, exchange) {
-    const ticker = yahooTicker(symbol, exchange);
+  /* ---- FETCH SINGLE CHART QUERY ---- */
+  async function queryChartEndpoint(ticker) {
     const proxies = getProxies();
     const servers = (window.Config && window.Config.YAHOO_SERVERS) || ['query1', 'query2'];
 
@@ -166,7 +219,7 @@
             const change = price - prev;
             const changePct = prev ? (change / prev) * 100 : 0;
 
-            const priceObj = {
+            return {
               price,
               dayChange: change,
               dayChangePct: changePct,
@@ -178,9 +231,6 @@
               source: 'yahoo',
               fetchedAt: new Date().toISOString()
             };
-
-            Storage.setPrice(cleanSymbol(symbol), priceObj);
-            return priceObj;
           }
         } catch (_) {
           // try next
@@ -190,20 +240,49 @@
     return null;
   }
 
+  /* ---- FETCH SINGLE WITH MULTI-STEP ALIAS & SEARCH FALLBACK ---- */
+  async function fetchSingleChart(symbol, exchange) {
+    const origClean = cleanSymbol(symbol);
+    const exch = exchange || 'NSE';
+
+    // 1. Try standard ticker
+    const primaryTicker = origClean + (exch === 'BSE' ? '.BO' : '.NS');
+    let priceObj = await queryChartEndpoint(primaryTicker);
+
+    // 2. Try alias ticker if primary failed
+    if (!priceObj) {
+      const alias = SYMBOL_ALIASES[origClean];
+      if (alias && alias !== origClean) {
+        const aliasTicker = alias + (exch === 'BSE' ? '.BO' : '.NS');
+        priceObj = await queryChartEndpoint(aliasTicker);
+      }
+    }
+
+    // 3. Try dynamic Yahoo Search if still failed
+    if (!priceObj) {
+      const discoveredTicker = await searchYahooTicker(origClean, exch);
+      if (discoveredTicker) {
+        priceObj = await queryChartEndpoint(discoveredTicker);
+      }
+    }
+
+    if (priceObj) {
+      Storage.setPrice(origClean, priceObj);
+      if (SYMBOL_ALIASES[origClean]) {
+        Storage.setPrice(SYMBOL_ALIASES[origClean], priceObj);
+      }
+      return priceObj;
+    }
+
+    return null;
+  }
+
   /* ---- PUBLIC: FETCH ONE ---- */
   async function fetchOne(symbol, exchange) {
     const sym = cleanSymbol(symbol);
     const exch = exchange || 'NSE';
-    const ticker = yahooTicker(sym, exch);
 
-    // Try batch endpoint for single ticker first
-    const batchRes = await fetchQuotesBatch([ticker]);
-    if (batchRes[sym]) {
-      Storage.setPrice(sym, batchRes[sym]);
-      return batchRes[sym].price;
-    }
-
-    // Try chart endpoint fallback
+    // Try chart endpoint with alias & search fallback
     const chartRes = await fetchSingleChart(sym, exch);
     return chartRes ? chartRes.price : null;
   }
@@ -241,23 +320,27 @@
         onProgress(Math.min(cIdx * BATCH_SIZE, total), total);
       }
 
-      // Batch query
+      // Try batch query
       const batchResult = await fetchQuotesBatch(tickerList);
 
       // Check which symbols succeeded in batch
       for (const sym of chunk) {
-        if (batchResult[sym]) {
-          Storage.setPrice(sym, batchResult[sym]);
+        const mappedSym = getAliasSymbol(sym);
+        const pObj = batchResult[sym] || batchResult[mappedSym];
+
+        if (pObj) {
+          Storage.setPrice(sym, pObj);
+          if (mappedSym !== sym) Storage.setPrice(mappedSym, pObj);
           succeeded++;
         } else {
-          // Fallback to single chart query
+          // Fallback to single multi-step chart query
           const singleRes = await fetchSingleChart(sym, uniqueMap[sym]);
           if (singleRes) {
             succeeded++;
           } else {
             failed.push(sym);
           }
-          await sleep(100);
+          await sleep(80);
         }
       }
 
@@ -327,6 +410,7 @@
     fetchMultiple,
     fetchAll,
     cleanSymbol,
-    yahooTicker
+    yahooTicker,
+    SYMBOL_ALIASES
   };
 })();

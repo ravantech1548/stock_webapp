@@ -125,7 +125,9 @@
     // Calculate how many are currently in buy zone (LTP <= Target Price)
     let inBuyZoneCount = 0;
     planned.forEach(p => {
-      const pData = Storage.getPrice(p.symbol);
+      const symClean = String(p.symbol || '').toUpperCase().trim();
+      const alias = (window.PriceService && window.PriceService.SYMBOL_ALIASES && window.PriceService.SYMBOL_ALIASES[symClean]);
+      const pData = Storage.getPrice(p.symbol) || (alias ? Storage.getPrice(alias) : null);
       if (pData && pData.price && pData.price <= p.targetPrice) {
         inBuyZoneCount++;
       }
@@ -279,7 +281,9 @@
     tbody.innerHTML = filteredPlans.map(plan => {
       const isExecuted = plan.status === 'executed';
       const targetValue = plan.qty * plan.targetPrice;
-      const pData = Storage.getPrice(plan.symbol);
+      const symClean = String(plan.symbol || '').toUpperCase().trim();
+      const alias = (window.PriceService && window.PriceService.SYMBOL_ALIASES && window.PriceService.SYMBOL_ALIASES[symClean]);
+      const pData = Storage.getPrice(plan.symbol) || (alias ? Storage.getPrice(alias) : null);
       const ltp = pData && pData.price ? pData.price : null;
 
       let ltpDisplay = '<span style="color:var(--text-muted)">—</span>';
@@ -880,11 +884,27 @@
       return;
     }
 
+    const btn = document.getElementById('btn-refresh-plan-prices');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;margin-right:6px;vertical-align:middle"></span> Fetching live prices…';
+    }
+
     if (window.PriceService) {
-      App.toast(`Checking live prices for ${plans.length} planned stock(s)...`, 'info');
-      await PriceService.fetchMultiple(plans);
+      App.toast(`Checking live prices for ${plans.length} planned stock(s)…`, 'info');
+      const res = await PriceService.fetchMultiple(plans);
       renderPlans();
-      App.toast('Plan stock prices updated.', 'success');
+      if (res && res.succeeded > 0) {
+        App.toast(`Updated live prices for ${res.succeeded} of ${res.total} stock(s).`, 'success');
+      } else {
+        App.toast('Live prices checked.', 'info');
+      }
+    }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml || '&#8635; Check Live Prices';
     }
   }
 
