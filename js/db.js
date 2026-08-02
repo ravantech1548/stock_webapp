@@ -97,9 +97,11 @@
       if (!firebase.apps.length) {
         firebase.initializeApp(window.FIREBASE_CONFIG);
       }
+      dbRef = firebase.database().ref('portfolio');
+
       // Timeout promise to prevent blocking boot if Firebase RTDB is slow/offline
       const fetchPromise = dbRef.once('value');
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout')), 3000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout (3s)')), 3000));
       const snap = await Promise.race([fetchPromise, timeoutPromise]);
       const remote = snap ? snap.val() : null;
 
@@ -124,6 +126,9 @@
           if (window.Plan && window.Plan.render) Plan.render();
           if (window.Watchlist && window.Watchlist.render) Watchlist.render();
         }
+      }, err => {
+        console.warn('DB Realtime listener error:', err);
+        updateSyncUI('error', err.message);
       });
 
       enabled = true;
@@ -131,7 +136,7 @@
       return true;
     } catch (e) {
       console.error('Firebase init failed:', e);
-      updateSyncUI('offline');
+      updateSyncUI('error', e.message);
       return false;
     }
   }
@@ -140,6 +145,7 @@
     init,
     push,
     pushAll,
+    pull,
     isEnabled: () => enabled,
     updateSyncUI
   };

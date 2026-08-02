@@ -213,6 +213,32 @@
 
     updateTopbarMeta();
 
+    // Wire up Cloud Sync badge click to trigger manual sync
+    const syncBadge = document.getElementById('cloud-sync-status');
+    if (syncBadge) {
+      syncBadge.style.cursor = 'pointer';
+      syncBadge.addEventListener('click', async () => {
+        if (window.DB && window.DB.isEnabled()) {
+          toast('Syncing data with Firebase Cloud...', 'info');
+          try {
+            await DB.pushAll();
+            toast('Firebase Cloud Sync successful!', 'success');
+          } catch (e) {
+            toast('Firebase Sync error: ' + (e.message || e), 'error');
+          }
+        } else if (window.DB) {
+          toast('Attempting to reconnect to Firebase...', 'info');
+          const ok = await DB.init();
+          if (ok) {
+            toast('Connected to Firebase!', 'success');
+            await DB.pushAll();
+          } else {
+            toast('Firebase offline. Check Realtime Database in Firebase Console.', 'warn');
+          }
+        }
+      });
+    }
+
     // Patch render functions to also update topbar meta
     const origHRender = Holdings.render;
     Holdings.render = function () { origHRender(); updateTopbarMeta(); };

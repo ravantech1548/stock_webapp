@@ -358,6 +358,11 @@
     if (window.Holdings) Holdings.render();
     if (window.Funds) Funds.render();
 
+    // Trigger immediate cloud push for all imported data
+    if (window.DB && window.DB.isEnabled()) {
+      window.DB.pushAll().catch(e => console.warn('Cloud sync error after import:', e));
+    }
+
     const parts = [];
     if (added > 0) parts.push(`${added} added`);
     if (updated > 0) parts.push(`${updated} updated`);
