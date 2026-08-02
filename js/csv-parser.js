@@ -67,6 +67,7 @@
         name: clean(col(row, 'name', 'company', 'company name', 'stock name', 'symbol')),
         qty: parseCleanNum(col(row, 'qty', 'qty.', 'quantity', 'shares', 'net qty', 'holdings')),
         avgBuyPrice: parseCleanNum(col(row, 'avgbuyprice', 'avg buy price', 'avg price', 'average price', 'avg cost', 'avg. cost', 'buy price', 'cost', 'price')),
+        earnedQty: parseCleanNum(col(row, 'earned qty', 'earnedqty', 'free qty', 'freeqty', 'earned stock', 'free shares', 'earned shares')),
         exchange: (col(row, 'exchange') || 'NSE').toUpperCase().includes('BSE') ? 'BSE' : 'NSE'
       })
     }
@@ -388,11 +389,11 @@
   /* ---- SAMPLE TEMPLATES (CSV & EXCEL) ---- */
   function downloadTemplate(type) {
     const data = [
-      { Symbol: 'RELIANCE', 'Company Name': 'Reliance Industries Ltd', Qty: 10, 'Avg Buy Price': 2450.00, Exchange: 'NSE' },
-      { Symbol: 'TCS', 'Company Name': 'Tata Consultancy Services', Qty: 5, 'Avg Buy Price': 3650.00, Exchange: 'NSE' },
-      { Symbol: 'INFY', 'Company Name': 'Infosys Ltd', Qty: 8, 'Avg Buy Price': 1750.50, Exchange: 'NSE' },
-      { Symbol: 'HDFCBANK', 'Company Name': 'HDFC Bank Ltd', Qty: 12, 'Avg Buy Price': 1600.00, Exchange: 'NSE' },
-      { Symbol: 'TATAMOTORS', 'Company Name': 'Tata Motors Ltd', Qty: 15, 'Avg Buy Price': 920.00, Exchange: 'NSE' }
+      { Symbol: 'RELIANCE', 'Company Name': 'Reliance Industries Ltd', Qty: 10, 'Avg Buy Price': 2450.00, 'Earned Qty': 2, Exchange: 'NSE' },
+      { Symbol: 'TCS', 'Company Name': 'Tata Consultancy Services', Qty: 5, 'Avg Buy Price': 3650.00, 'Earned Qty': 0, Exchange: 'NSE' },
+      { Symbol: 'INFY', 'Company Name': 'Infosys Ltd', Qty: 8, 'Avg Buy Price': 1750.50, 'Earned Qty': 1, Exchange: 'NSE' },
+      { Symbol: 'HDFCBANK', 'Company Name': 'HDFC Bank Ltd', Qty: 12, 'Avg Buy Price': 1600.00, 'Earned Qty': 0, Exchange: 'NSE' },
+      { Symbol: 'TATAMOTORS', 'Company Name': 'Tata Motors Ltd', Qty: 15, 'Avg Buy Price': 920.00, 'Earned Qty': 5, Exchange: 'NSE' }
     ];
 
     if (type === 'xlsx' && typeof XLSX !== 'undefined') {

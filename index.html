@@ -67,6 +67,11 @@
       <div class="card-value" id="card-count">—</div>
       <div class="card-sub" id="card-last-refresh"></div>
     </div>
+    <div class="card">
+      <div class="card-label">🎁 Earned (Free) Stock</div>
+      <div class="card-value" id="card-earned-value">—</div>
+      <div class="card-sub" id="card-earned-sub">0 shares</div>
+    </div>
   </div>
 
   <!-- Toolbar -->
@@ -327,6 +332,11 @@
           <input class="form-control" id="h-avg" type="number" step="0.01" min="0.01" placeholder="e.g. 2500.00">
           <div class="form-error" id="h-avg-err"></div>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="h-earned-qty">🎁 Earned / Free Stock Qty <span style="font-weight:normal;color:var(--text-muted);font-size:.78rem">(Shares funded from profit)</span></label>
+        <input class="form-control" id="h-earned-qty" type="number" step="0.001" min="0" placeholder="e.g. 200 (Optional: zero-cost basis shares)">
+        <div class="form-hint" style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Shares you kept or bought using booked profits from previous sales.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="h-notes">Notes</label>

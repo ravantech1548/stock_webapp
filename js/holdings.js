@@ -12,11 +12,13 @@
   function calcRow(h, prices) {
     const p = prices[h.symbol];
     const currentPrice = p ? p.price : null;
+    const earnedQty = parseFloat(h.earnedQty) || 0;
     const invested = h.avgBuyPrice * h.qty;
     const currentValue = currentPrice != null ? currentPrice * h.qty : null;
+    const earnedValue = currentPrice != null ? currentPrice * earnedQty : (h.avgBuyPrice * earnedQty);
     const pnlRs = currentValue != null ? currentValue - invested : null;
     const pnlPct = pnlRs != null ? (pnlRs / invested) * 100 : null;
-    return { ...h, currentPrice, invested, currentValue, pnlRs, pnlPct, priceData: p || null };
+    return { ...h, earnedQty, earnedValue, currentPrice, invested, currentValue, pnlRs, pnlPct, priceData: p || null };
   }
 
   function getEnrichedHoldings() {
@@ -74,17 +76,34 @@
       return;
     }
 
-    let totalInvested = 0, totalCurrent = 0, totalPnl = 0;
+    let totalInvested = 0, totalCurrent = 0, totalPnl = 0, totalEarnedVal = 0, totalEarnedQty = 0, earnedCount = 0;
 
     tbody.innerHTML = rows.map(r => {
       totalInvested += r.invested;
       if (r.currentValue != null) totalCurrent += r.currentValue;
       if (r.pnlRs != null) totalPnl += r.pnlRs;
+      if (r.earnedQty > 0) {
+        totalEarnedVal += r.earnedValue;
+        totalEarnedQty += r.earnedQty;
+        earnedCount++;
+      }
 
       const dotClass = stalenessClass(r.priceData);
       const pnlClass = r.pnlRs == null ? 'neutral' : r.pnlRs > 0 ? 'gain' : r.pnlRs < 0 ? 'loss' : 'neutral';
       const yahooSuffix = r.exchange === 'BSE' ? Config.BSE_SUFFIX : Config.DEFAULT_EXCHANGE_SUFFIX;
       const yahooUrl = `https://finance.yahoo.com/quote/${encodeURIComponent(r.symbol + yahooSuffix)}`;
+
+      const qtyFmt = formatNumber(r.qty, r.qty % 1 === 0 ? 0 : 3);
+      let earnedBadgeHtml = '';
+      if (r.earnedQty > 0) {
+        const earnedQtyFmt = formatNumber(r.earnedQty, r.earnedQty % 1 === 0 ? 0 : 3);
+        const earnedValFmt = formatCurrency(r.earnedValue);
+        if (r.earnedQty >= r.qty) {
+          earnedBadgeHtml = `<div style="margin-top:3px"><span class="badge badge-free" title="${r.qty} shares valued at ${earnedValFmt} funded 100% from realized profits (₹0 net cost basis)">🌟 100% Free</span></div>`;
+        } else {
+          earnedBadgeHtml = `<div style="margin-top:3px"><span class="badge badge-earned" title="${earnedQtyFmt} of ${qtyFmt} shares valued at ${earnedValFmt} funded from realized profits">🎁 ${earnedQtyFmt} Earned</span></div>`;
+        }
+      }
 
       return `<tr data-id="${escHtml(r.id)}">
         <td>
@@ -92,7 +111,10 @@
           <span class="exchange-badge">${escHtml(r.exchange)}</span>
         </td>
         <td class="col-hide-md" title="${escHtml(r.name)}">${escHtml(r.name.length > 28 ? r.name.slice(0, 26) + '…' : r.name)}</td>
-        <td>${formatNumber(r.qty, r.qty % 1 === 0 ? 0 : 3)}</td>
+        <td>
+          <div>${qtyFmt}</div>
+          ${earnedBadgeHtml}
+        </td>
         <td>${formatCurrency(r.avgBuyPrice)}</td>
         <td class="price-cell" data-symbol="${escHtml(r.symbol)}" title="Click to edit price manually">
           <span class="price-wrap">
@@ -115,7 +137,7 @@
     const totalPnlPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
     tfoot.innerHTML = `<tr>
       <td colspan="2">Total</td>
-      <td></td>
+      <td>${totalEarnedQty > 0 ? `<span class="badge badge-earned" style="font-size:.7rem">🎁 ${formatNumber(totalEarnedQty)} Free</span>` : ''}</td>
       <td></td>
       <td></td>
       <td class="fw-bold">${formatCurrency(totalCurrent)}</td>
@@ -124,15 +146,18 @@
       <td></td>
     </tr>`;
 
-    updateSummaryCards(rows, totalInvested, totalCurrent, totalPnl, totalPnlPct);
+    updateSummaryCards(rows, totalInvested, totalCurrent, totalPnl, totalPnlPct, totalEarnedVal, totalEarnedQty, earnedCount);
     window.Charts && window.Charts.update(rows);
   }
 
-  function updateSummaryCards(rows, totalInvested, totalCurrent, totalPnl, totalPnlPct) {
+  function updateSummaryCards(rows, totalInvested, totalCurrent, totalPnl, totalPnlPct, totalEarnedVal, totalEarnedQty, earnedCount) {
     const invested = totalInvested || 0;
     const current = totalCurrent || 0;
     const pnl = totalPnl || 0;
     const pnlPct = totalPnlPct || 0;
+    const earnedVal = totalEarnedVal || 0;
+    const earnedShares = totalEarnedQty || 0;
+    const countWithEarned = earnedCount || 0;
 
     document.getElementById('card-invested').textContent = formatCurrency(invested);
     document.getElementById('card-current').textContent = formatCurrency(current);
@@ -143,6 +168,15 @@
 
     document.getElementById('card-pnl-pct').textContent = formatPercent(pnlPct);
     document.getElementById('card-count').textContent = rows.length;
+
+    const elEarnedVal = document.getElementById('card-earned-value');
+    const elEarnedSub = document.getElementById('card-earned-sub');
+    if (elEarnedVal) elEarnedVal.textContent = formatCurrency(earnedVal);
+    if (elEarnedSub) {
+      elEarnedSub.textContent = earnedShares > 0
+        ? `${formatNumber(earnedShares)} shares in ${countWithEarned} stock${countWithEarned !== 1 ? 's' : ''}`
+        : '0 shares (₹0 value)';
+    }
 
     const prices = Storage.getPrices();
     const freshCount = rows.filter(r => prices[r.symbol] && prices[r.symbol].fetchedAt).length;
@@ -171,6 +205,7 @@
     document.getElementById('h-name').value = '';
     document.getElementById('h-qty').value = '';
     document.getElementById('h-avg').value = '';
+    document.getElementById('h-earned-qty').value = '';
     document.getElementById('h-notes').value = '';
     clearErrors();
     App.openModal('modal-holding');
@@ -187,6 +222,7 @@
     document.getElementById('h-name').value = holding.name;
     document.getElementById('h-qty').value = holding.qty;
     document.getElementById('h-avg').value = holding.avgBuyPrice;
+    document.getElementById('h-earned-qty').value = (holding.earnedQty != null && holding.earnedQty > 0) ? holding.earnedQty : '';
     document.getElementById('h-notes').value = holding.notes || '';
     clearErrors();
     App.openModal('modal-holding');
@@ -210,6 +246,7 @@
     const name = document.getElementById('h-name').value.trim();
     const qty = parseFloat(document.getElementById('h-qty').value);
     const avg = parseFloat(document.getElementById('h-avg').value);
+    const earnedQty = Math.max(0, parseFloat(document.getElementById('h-earned-qty').value) || 0);
     const exchange = document.getElementById('h-exchange').value;
     const notes = document.getElementById('h-notes').value.trim();
     const id = document.getElementById('holding-id').value || generateId();
@@ -221,7 +258,7 @@
 
     if (!ok) return;
 
-    Storage.upsertHolding({ id, symbol, name, qty, avgBuyPrice: avg, exchange, notes });
+    Storage.upsertHolding({ id, symbol, name, qty, avgBuyPrice: avg, earnedQty, exchange, notes });
     App.closeModal('modal-holding');
     renderHoldings();
     App.toast(`Holding ${symbol} saved.`, 'success');

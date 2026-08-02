@@ -548,6 +548,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; 
 .badge-planned  { background:#fef9c3; color:#854d0e; }
 .badge-executed { background:var(--gain-bg); color:var(--gain); }
 .badge-buyzone  { background:#dcfce7; color:#15803d; border:1px solid #86efac; animation: pulse 2s infinite ease-in-out; }
+.badge-earned   { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-weight:600; cursor:help; }
+.badge-free     { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-weight:700; cursor:help; }
 .badge-priority-high { background:#fee2e2; color:#b91c1c; font-weight:700; }
 .badge-priority-med  { background:#fef3c7; color:#b45309; }
 .badge-priority-low  { background:#f1f5f9; color:#475569; }
