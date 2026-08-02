@@ -26,7 +26,8 @@
     [P + 'funds']:     'funds',
     [P + 'plans']:     'plans',
     [P + 'settings']:  'settings',
-    [P + 'watchlist']: 'watchlist'
+    [P + 'watchlist']: 'watchlist',
+    [P + 'prices']:    'prices'
   };
 
   function write(key, value) {

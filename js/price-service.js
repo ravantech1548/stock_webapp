@@ -34,17 +34,34 @@
   }
 
   function getProxies() {
-    if (window.Config && window.Config.CORS_PROXIES && window.Config.CORS_PROXIES.length) {
-      return window.Config.CORS_PROXIES;
+    const list = [];
+    // Prioritize Netlify proxy redirect if hosted online
+    if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+      list.push({ name: 'netlify-query1', url: '/api/yahoo/', type: 'relative' });
+      list.push({ name: 'netlify-query2', url: '/api/yahoo2/', type: 'relative' });
     }
-    return [
-      { name: 'corsproxy.io', url: 'https://corsproxy.io/?url=', type: 'direct' },
-      { name: 'allorigins',   url: 'https://api.allorigins.win/get?url=', type: 'allorigins' },
-      { name: 'codetabs',     url: 'https://api.codetabs.com/v1/proxy?quest=', type: 'direct' }
-    ];
+    if (window.Config && window.Config.CORS_PROXIES && window.Config.CORS_PROXIES.length) {
+      list.push(...window.Config.CORS_PROXIES);
+    } else {
+      list.push(
+        { name: 'corsproxy.io', url: 'https://corsproxy.io/?url=', type: 'direct' },
+        { name: 'allorigins',   url: 'https://api.allorigins.win/get?url=', type: 'allorigins' },
+        { name: 'codetabs',     url: 'https://api.codetabs.com/v1/proxy?quest=', type: 'direct' }
+      );
+    }
+    return list;
   }
 
   function buildProxyUrl(proxy, targetUrl) {
+    if (proxy.type === 'relative') {
+      try {
+        const u = new URL(targetUrl);
+        return proxy.url + u.pathname.replace(/^\//, '') + u.search;
+      } catch (_) {
+        const cleanPath = targetUrl.replace(/^https?:\/\/[^/]+\//, '');
+        return proxy.url + cleanPath;
+      }
+    }
     if (proxy.type === 'allorigins') {
       return proxy.url + encodeURIComponent(targetUrl) + '&cache=' + Date.now();
     }

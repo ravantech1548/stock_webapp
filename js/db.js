@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const SYNC_KEYS = ['holdings', 'funds', 'plans', 'settings', 'watchlist'];
+  const SYNC_KEYS = ['holdings', 'funds', 'plans', 'settings', 'watchlist', 'prices'];
   const DB_URL_STORAGE_KEY = 'spp_db_url';
   let dbRef = null;
   let enabled = false;
