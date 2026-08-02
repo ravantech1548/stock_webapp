@@ -197,6 +197,140 @@
   }
 
   /* ---- ADD / EDIT MODAL ---- */
+  /* ---- STOCK SEARCH AUTOCOMPLETE FOR HOLDINGS ---- */
+  let activeHIndex = -1;
+  let filteredHStocks = [];
+
+  function getAllStockPool() {
+    const wl = Storage.getWatchlist();
+    const map = new Map();
+    Object.values(wl).forEach(cat => {
+      (cat.stocks || []).forEach(s => {
+        if (s.symbol && !map.has(s.symbol)) map.set(s.symbol, { ...s });
+      });
+    });
+    Storage.getHoldings().forEach(h => {
+      if (h.symbol && !map.has(h.symbol)) {
+        map.set(h.symbol, { symbol: h.symbol, name: h.name || '', ltp: h.currentPrice || h.avgBuyPrice || 0, changePct: 0 });
+      }
+    });
+    return Array.from(map.values());
+  }
+
+  function filterHStocks(query) {
+    const stocks = getAllStockPool();
+    if (!query || !query.trim()) return stocks.slice(0, 40);
+
+    const rawQ = query.trim();
+    const upperQ = rawQ.toUpperCase();
+
+    let regex = null;
+    if (rawQ.includes('*') || rawQ.includes('?')) {
+      try {
+        const pattern = rawQ.replace(/([.+^$[\]\\(){}|-])/g, '\\$1').replace(/\*/g, '.*').replace(/\?/g, '.');
+        regex = new RegExp('^' + pattern + '$', 'i');
+      } catch (e) {
+        regex = null;
+      }
+    }
+
+    const exact = [], prefix = [], substring = [], nameMatch = [];
+    stocks.forEach(s => {
+      const sym = (s.symbol || '').toUpperCase();
+      const nm = (s.name || '').toUpperCase();
+      if (regex) {
+        if (regex.test(sym) || regex.test(nm)) substring.push(s);
+      } else {
+        if (sym === upperQ) exact.push(s);
+        else if (sym.startsWith(upperQ)) prefix.push(s);
+        else if (sym.includes(upperQ)) substring.push(s);
+        else if (nm.includes(upperQ)) nameMatch.push(s);
+      }
+    });
+    return [...exact, ...prefix, ...substring, ...nameMatch].slice(0, 50);
+  }
+
+  function renderHDropdown(stocks, query) {
+    const dropdown = document.getElementById('h-stock-dropdown');
+    if (!dropdown) return;
+    filteredHStocks = stocks;
+    activeHIndex = -1;
+
+    if (!stocks || !stocks.length) {
+      dropdown.innerHTML = `<div class="stock-dropdown-empty">No matching stocks found. Press Tab to use as custom symbol.</div>`;
+      dropdown.classList.add('open');
+      return;
+    }
+
+    let html = `
+      <div class="stock-dropdown-header">
+        <span><b>${stocks.length}</b> stock${stocks.length > 1 ? 's' : ''} available</span>
+        <span>💡 Use <code>*</code> for wildcard</span>
+      </div>
+    `;
+
+    html += stocks.map((s, idx) => {
+      const pData = Storage.getPrice(s.symbol);
+      const ltp = pData && pData.price ? pData.price : (s.ltp || 0);
+      const chg = pData && pData.changePct != null ? pData.changePct : (s.changePct || 0);
+      const sign = chg >= 0 ? '+' : '';
+      const pctClass = chg >= 0 ? 'gain' : 'loss';
+
+      return `
+        <div class="stock-dropdown-item" data-idx="${idx}">
+          <div class="stock-item-left">
+            <div class="stock-item-sym">${escHtml(s.symbol)}</div>
+            ${s.name ? `<div class="stock-item-name">${escHtml(s.name)}</div>` : ''}
+          </div>
+          <div class="stock-item-right">
+            ${ltp > 0 ? `<div class="stock-item-price">${formatCurrency(ltp)}</div>` : ''}
+            ${chg !== 0 ? `<span class="stock-item-pct ${pctClass}">${sign}${chg.toFixed(2)}%</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add('open');
+  }
+
+  function closeHDropdown() {
+    const dd = document.getElementById('h-stock-dropdown');
+    if (dd) dd.classList.remove('open');
+    activeHIndex = -1;
+  }
+
+  function selectHStock(stock) {
+    if (!stock) return;
+    const symInp = document.getElementById('h-symbol');
+    const nameInp = document.getElementById('h-name');
+    const avgInp = document.getElementById('h-avg');
+    const clearBtn = document.getElementById('h-stock-clear-btn');
+
+    if (symInp) symInp.value = stock.symbol;
+    if (nameInp && stock.name && !nameInp.value) nameInp.value = stock.name;
+
+    const pData = Storage.getPrice(stock.symbol);
+    const ltp = pData && pData.price ? pData.price : (stock.ltp || 0);
+    if (avgInp && (!avgInp.value || avgInp.dataset.autoFilled === 'true') && ltp > 0) {
+      avgInp.value = parseFloat(ltp).toFixed(2);
+      avgInp.dataset.autoFilled = 'true';
+    }
+
+    if (clearBtn) clearBtn.style.display = 'block';
+    closeHDropdown();
+    if (symInp) symInp.focus();
+  }
+
+  function updateHSearch() {
+    const symInp = document.getElementById('h-symbol');
+    const clearBtn = document.getElementById('h-stock-clear-btn');
+    const q = symInp ? symInp.value : '';
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+    const filtered = filterHStocks(q);
+    renderHDropdown(filtered, q);
+  }
+
   function openAddModal() {
     document.getElementById('holding-modal-title').textContent = 'Add Holding';
     document.getElementById('holding-id').value = '';
@@ -207,9 +341,18 @@
     document.getElementById('h-avg').value = '';
     document.getElementById('h-earned-qty').value = '';
     document.getElementById('h-notes').value = '';
+    const clearBtn = document.getElementById('h-stock-clear-btn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    closeHDropdown();
     clearErrors();
     App.openModal('modal-holding');
-    document.getElementById('h-symbol').focus();
+    setTimeout(() => {
+      const inp = document.getElementById('h-symbol');
+      if (inp) {
+        inp.focus();
+        updateHSearch();
+      }
+    }, 100);
   }
 
   function openEditModal(id) {
@@ -224,9 +367,15 @@
     document.getElementById('h-avg').value = holding.avgBuyPrice;
     document.getElementById('h-earned-qty').value = (holding.earnedQty != null && holding.earnedQty > 0) ? holding.earnedQty : '';
     document.getElementById('h-notes').value = holding.notes || '';
+    const clearBtn = document.getElementById('h-stock-clear-btn');
+    if (clearBtn) clearBtn.style.display = holding.symbol ? 'block' : 'none';
+    closeHDropdown();
     clearErrors();
     App.openModal('modal-holding');
-    document.getElementById('h-symbol').focus();
+    setTimeout(() => {
+      const inp = document.getElementById('h-symbol');
+      if (inp) inp.focus();
+    }, 100);
   }
 
   function clearErrors() {
@@ -236,6 +385,8 @@
     ['h-symbol', 'h-name', 'h-qty', 'h-avg'].forEach(id => {
       document.getElementById(id).classList.remove('error');
     });
+    const avgInp = document.getElementById('h-avg');
+    if (avgInp) delete avgInp.dataset.autoFilled;
   }
 
   function validateAndSave() {
@@ -364,9 +515,75 @@
     document.getElementById('btn-confirm-ok').addEventListener('click', executeDelete);
     document.getElementById('btn-download-template').addEventListener('click', downloadTemplate);
 
+    const hSymInp = document.getElementById('h-symbol');
+    const hClearBtn = document.getElementById('h-stock-clear-btn');
+    const hDropdown = document.getElementById('h-stock-dropdown');
+
+    if (hSymInp) {
+      hSymInp.addEventListener('input', updateHSearch);
+      hSymInp.addEventListener('focus', updateHSearch);
+      hSymInp.addEventListener('keydown', e => {
+        if (!hDropdown || !hDropdown.classList.contains('open')) return;
+        const items = hDropdown.querySelectorAll('.stock-dropdown-item');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeHIndex = (activeHIndex + 1) % items.length;
+          items.forEach((it, i) => it.classList.toggle('active', i === activeHIndex));
+          if (items[activeHIndex]) items[activeHIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeHIndex = (activeHIndex - 1 + items.length) % items.length;
+          items.forEach((it, i) => it.classList.toggle('active', i === activeHIndex));
+          if (items[activeHIndex]) items[activeHIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && activeHIndex >= 0 && filteredHStocks[activeHIndex]) {
+          e.preventDefault();
+          e.stopPropagation();
+          selectHStock(filteredHStocks[activeHIndex]);
+        } else if (e.key === 'Escape') {
+          closeHDropdown();
+        }
+      });
+    }
+
+    if (hClearBtn) {
+      hClearBtn.addEventListener('click', e => {
+        e.preventDefault();
+        if (hSymInp) {
+          hSymInp.value = '';
+          hSymInp.focus();
+        }
+        hClearBtn.style.display = 'none';
+        updateHSearch();
+      });
+    }
+
+    if (hDropdown) {
+      hDropdown.addEventListener('mousedown', e => {
+        const it = e.target.closest('.stock-dropdown-item');
+        if (it) {
+          const idx = parseInt(it.dataset.idx, 10);
+          if (!isNaN(idx) && filteredHStocks[idx]) {
+            e.preventDefault();
+            selectHStock(filteredHStocks[idx]);
+          }
+        }
+      });
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#h-symbol-group')) {
+        closeHDropdown();
+      }
+    });
+
     // Keyboard: Enter on holding modal
     document.getElementById('modal-holding').addEventListener('keydown', e => {
-      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') validateAndSave();
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        const dd = document.getElementById('h-stock-dropdown');
+        if (dd && dd.classList.contains('open') && activeHIndex >= 0) return;
+        validateAndSave();
+      }
     });
 
     renderHoldings();

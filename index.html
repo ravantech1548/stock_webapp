@@ -345,9 +345,15 @@
     <div class="modal-body">
       <input type="hidden" id="holding-id">
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group" id="h-symbol-group">
           <label class="form-label" for="h-symbol">Symbol <span>*</span></label>
-          <input class="form-control" id="h-symbol" type="text" placeholder="e.g. RELIANCE" autocomplete="off">
+          <div class="stock-search-wrap">
+            <div class="stock-search-input-box">
+              <input class="form-control" id="h-symbol" type="text" placeholder="Search symbol/name e.g. TATA*, *BEES..." autocomplete="off" spellcheck="false">
+              <button type="button" id="h-stock-clear-btn" class="stock-search-clear" title="Clear search" style="display:none">&times;</button>
+            </div>
+            <div id="h-stock-dropdown" class="stock-dropdown-menu" role="listbox"></div>
+          </div>
           <div class="form-error" id="h-symbol-err"></div>
         </div>
         <div class="form-group">
@@ -432,23 +438,22 @@
     <div class="modal-body">
       <input type="hidden" id="plan-id">
       <div class="form-group">
-        <label class="form-label" for="p-category">NIFTY Category</label>
+        <label class="form-label" for="p-category">NIFTY / Watchlist Category</label>
         <select class="form-control" id="p-category">
-          <option value="">— Type symbol manually —</option>
+          <option value="">— All Watchlist Categories / Manual —</option>
         </select>
       </div>
       <div class="form-grid">
         <div class="form-group" id="p-symbol-group">
-          <label class="form-label" for="p-symbol">Symbol <span>*</span></label>
-          <input class="form-control" id="p-symbol" type="text" placeholder="e.g. RELIANCE" autocomplete="off">
+          <label class="form-label" for="p-symbol">Stock Symbol / Search <span>*</span></label>
+          <div class="stock-search-wrap">
+            <div class="stock-search-input-box">
+              <input class="form-control" id="p-symbol" type="text" placeholder="Search symbol/name e.g. TATA*, *BEES, INFY..." autocomplete="off" spellcheck="false">
+              <button type="button" id="p-stock-clear-btn" class="stock-search-clear" title="Clear search" style="display:none">&times;</button>
+            </div>
+            <div id="p-stock-dropdown" class="stock-dropdown-menu" role="listbox"></div>
+          </div>
           <div class="form-error" id="p-symbol-err"></div>
-        </div>
-        <div class="form-group" id="p-stock-select-group" style="display:none">
-          <label class="form-label" for="p-stock-select">Stock <span>*</span></label>
-          <select class="form-control" id="p-stock-select">
-            <option value="">— Select stock —</option>
-          </select>
-          <div class="form-error" id="p-stock-err"></div>
         </div>
         <div class="form-group">
           <label class="form-label" for="p-exchange">Exchange</label>

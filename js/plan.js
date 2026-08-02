@@ -366,60 +366,268 @@
     }
   }
 
+  /* ---- STOCK SEARCH & AUTOCOMPLETE ENGINE ---- */
+  let activeDropdownIndex = -1;
+  let currentFilteredStocks = [];
+
+  function getAvailableStocksForCategory(catId) {
+    const wl = Storage.getWatchlist();
+    if (catId && wl[catId]) {
+      return wl[catId].stocks || [];
+    }
+    // If no category selected, collect all unique stocks from all watchlists & holdings
+    const map = new Map();
+    Object.values(wl).forEach(cat => {
+      (cat.stocks || []).forEach(s => {
+        if (s.symbol && !map.has(s.symbol)) {
+          map.set(s.symbol, { ...s });
+        }
+      });
+    });
+    // Also include stocks from holdings
+    Storage.getHoldings().forEach(h => {
+      if (h.symbol && !map.has(h.symbol)) {
+        map.set(h.symbol, {
+          symbol: h.symbol,
+          name: h.name || '',
+          ltp: h.currentPrice || h.avgPrice || 0,
+          changePct: 0
+        });
+      }
+    });
+    return Array.from(map.values());
+  }
+
+  function filterStocksWithWildcard(stocks, query) {
+    if (!query || !query.trim()) {
+      return stocks.slice(0, 40);
+    }
+
+    const rawQ = query.trim();
+    const upperQ = rawQ.toUpperCase();
+
+    // Check for wildcards (* or ?)
+    let regex = null;
+    if (rawQ.includes('*') || rawQ.includes('?')) {
+      try {
+        const pattern = rawQ
+          .replace(/([.+^$[\]\\(){}|-])/g, '\\$1')
+          .replace(/\*/g, '.*')
+          .replace(/\?/g, '.');
+        regex = new RegExp('^' + pattern + '$', 'i');
+      } catch (e) {
+        regex = null;
+      }
+    }
+
+    const exactMatches = [];
+    const prefixMatches = [];
+    const substringMatches = [];
+    const nameMatches = [];
+
+    stocks.forEach(s => {
+      const sym = (s.symbol || '').toUpperCase();
+      const name = (s.name || '').toUpperCase();
+
+      if (regex) {
+        if (regex.test(sym) || regex.test(name)) {
+          substringMatches.push(s);
+        }
+      } else {
+        if (sym === upperQ) {
+          exactMatches.push(s);
+        } else if (sym.startsWith(upperQ)) {
+          prefixMatches.push(s);
+        } else if (sym.includes(upperQ)) {
+          substringMatches.push(s);
+        } else if (name.includes(upperQ)) {
+          nameMatches.push(s);
+        }
+      }
+    });
+
+    return [...exactMatches, ...prefixMatches, ...substringMatches, ...nameMatches].slice(0, 60);
+  }
+
+  function highlightMatchText(text, query) {
+    if (!text || !query || !query.trim()) return escHtml(text);
+    const cleanQ = query.replace(/[*?]/g, '').trim();
+    if (!cleanQ) return escHtml(text);
+    
+    const escaped = escHtml(text);
+    const regex = new RegExp(`(${cleanQ.replace(/([.+^$[\]\\(){}|-])/g, '\\$1')})`, 'gi');
+    return escaped.replace(regex, '<mark>$1</mark>');
+  }
+
+  function renderStockDropdown(stocks, query) {
+    const dropdown = document.getElementById('p-stock-dropdown');
+    if (!dropdown) return;
+
+    currentFilteredStocks = stocks;
+    activeDropdownIndex = -1;
+
+    if (!stocks || stocks.length === 0) {
+      const rawQ = query ? escHtml(query.trim()) : '';
+      dropdown.innerHTML = `
+        <div class="stock-dropdown-empty">
+          No matching stocks found${rawQ ? ` for "<strong>${rawQ}</strong>"` : ''}.<br>
+          <span style="font-size:.75rem;color:var(--text-muted)">Press Tab or Enter to use "${rawQ}" as custom symbol.</span>
+        </div>
+      `;
+      dropdown.classList.add('open');
+      return;
+    }
+
+    const catId = document.getElementById('p-category').value;
+    const catName = catId ? (Storage.getWatchlist()[catId] ? Storage.getWatchlist()[catId].name : 'Category') : 'All Presets';
+    
+    let html = `
+      <div class="stock-dropdown-header">
+        <span><b>${stocks.length}</b> stock${stocks.length > 1 ? 's' : ''} in ${escHtml(catName)}</span>
+        <span>💡 Use <code>*</code> for wildcard</span>
+      </div>
+    `;
+
+    html += stocks.map((s, idx) => {
+      const pData = Storage.getPrice(s.symbol);
+      const ltp = pData && pData.price ? pData.price : (s.ltp || 0);
+      const chg = pData && pData.changePct != null ? pData.changePct : (s.changePct || 0);
+      const sign = chg >= 0 ? '+' : '';
+      const pctClass = chg >= 0 ? 'gain' : 'loss';
+
+      return `
+        <div class="stock-dropdown-item" data-idx="${idx}" data-symbol="${escHtml(s.symbol)}" data-ltp="${ltp}" data-name="${escHtml(s.name || '')}">
+          <div class="stock-item-left">
+            <div class="stock-item-sym">${highlightMatchText(s.symbol, query)}</div>
+            ${s.name ? `<div class="stock-item-name">${highlightMatchText(s.name, query)}</div>` : ''}
+          </div>
+          <div class="stock-item-right">
+            ${ltp > 0 ? `<div class="stock-item-price">${formatCurrency(ltp)}</div>` : ''}
+            ${chg !== 0 ? `<span class="stock-item-pct ${pctClass}">${sign}${chg.toFixed(2)}%</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add('open');
+  }
+
+  function closeStockDropdown() {
+    const dropdown = document.getElementById('p-stock-dropdown');
+    if (dropdown) dropdown.classList.remove('open');
+    activeDropdownIndex = -1;
+  }
+
+  function selectStockFromItem(stock) {
+    if (!stock) return;
+    const symInput = document.getElementById('p-symbol');
+    const priceInput = document.getElementById('p-price');
+    const clearBtn = document.getElementById('p-stock-clear-btn');
+    const exchEl = document.getElementById('p-exchange');
+
+    if (symInput) symInput.value = stock.symbol;
+    if (exchEl) exchEl.value = 'NSE';
+
+    const pData = Storage.getPrice(stock.symbol);
+    const ltp = pData && pData.price ? pData.price : (stock.ltp || 0);
+    if (priceInput && (!priceInput.value || priceInput.dataset.autoFilled === 'true')) {
+      if (ltp > 0) {
+        priceInput.value = parseFloat(ltp).toFixed(2);
+        priceInput.dataset.autoFilled = 'true';
+      }
+    }
+
+    if (clearBtn) clearBtn.style.display = 'block';
+    closeStockDropdown();
+    if (symInput) symInput.focus();
+  }
+
+  function updateStockSearch() {
+    const symInput = document.getElementById('p-symbol');
+    const clearBtn = document.getElementById('p-stock-clear-btn');
+    const catId = document.getElementById('p-category').value;
+
+    const q = symInput ? symInput.value : '';
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    const allStocks = getAvailableStocksForCategory(catId);
+    const filtered = filterStocksWithWildcard(allStocks, q);
+    renderStockDropdown(filtered, q);
+  }
+
+  function handleStockInputKeydown(e) {
+    const dropdown = document.getElementById('p-stock-dropdown');
+    if (!dropdown || !dropdown.classList.contains('open')) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        updateStockSearch();
+        e.preventDefault();
+      }
+      return;
+    }
+
+    const items = dropdown.querySelectorAll('.stock-dropdown-item');
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeDropdownIndex = (activeDropdownIndex + 1) % items.length;
+      highlightActiveDropdownItem(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeDropdownIndex = (activeDropdownIndex - 1 + items.length) % items.length;
+      highlightActiveDropdownItem(items);
+    } else if (e.key === 'Enter') {
+      if (activeDropdownIndex >= 0 && currentFilteredStocks[activeDropdownIndex]) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectStockFromItem(currentFilteredStocks[activeDropdownIndex]);
+      } else if (currentFilteredStocks.length > 0 && document.getElementById('p-symbol').value.trim()) {
+        const exact = currentFilteredStocks.find(s => s.symbol.toUpperCase() === document.getElementById('p-symbol').value.trim().toUpperCase());
+        if (exact) {
+          e.preventDefault();
+          e.stopPropagation();
+          selectStockFromItem(exact);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      closeStockDropdown();
+    }
+  }
+
+  function highlightActiveDropdownItem(items) {
+    items.forEach((item, idx) => {
+      if (idx === activeDropdownIndex) {
+        item.classList.add('active');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
   /* ---- CATEGORY & SELECT HELPERS ---- */
   function refreshCategorySelect() {
     const wl = Storage.getWatchlist();
     const sel = document.getElementById('p-category');
     if (!sel) return;
     const cur = sel.value;
-    sel.innerHTML = '<option value="">— Type symbol manually —</option>' +
+    sel.innerHTML = '<option value="">— All Watchlist Categories / Manual —</option>' +
       Object.values(wl).map(cat => `<option value="${cat.id}">${escHtml(cat.name)} (${cat.stocks.length})</option>`).join('');
     if (cur) sel.value = cur;
   }
 
   function onCategoryChange() {
-    const catId = document.getElementById('p-category').value;
-    const symbolGroup = document.getElementById('p-symbol-group');
-    const stockGroup = document.getElementById('p-stock-select-group');
-
-    if (!catId) {
-      if (symbolGroup) symbolGroup.style.display = '';
-      if (stockGroup) stockGroup.style.display = 'none';
-      return;
-    }
-
-    if (symbolGroup) symbolGroup.style.display = 'none';
-    if (stockGroup) stockGroup.style.display = '';
-
-    const stocks = (Storage.getWatchlist()[catId] || {}).stocks || [];
-    const stockSel = document.getElementById('p-stock-select');
-    if (stockSel) {
-      stockSel.innerHTML = '<option value="">— Select stock —</option>' +
-        stocks.map(s => {
-          const sign = s.changePct >= 0 ? '+' : '';
-          return `<option value="${escHtml(s.symbol)}" data-ltp="${s.ltp || ''}">${escHtml(s.symbol)} — ₹${(s.ltp || 0).toFixed(2)} (${sign}${(s.changePct || 0).toFixed(2)}%)</option>`;
-        }).join('');
-    }
-
-    const exchEl = document.getElementById('p-exchange');
-    if (exchEl) exchEl.value = 'NSE';
-  }
-
-  function onStockSelectChange() {
-    const stockSel = document.getElementById('p-stock-select');
-    if (!stockSel || !stockSel.value) return;
-    const opt = stockSel.selectedOptions[0];
-    if (opt && opt.dataset.ltp) {
-      const priceInput = document.getElementById('p-price');
-      if (priceInput && !priceInput.value) {
-        priceInput.value = parseFloat(opt.dataset.ltp).toFixed(2);
-      }
+    const symInput = document.getElementById('p-symbol');
+    if (symInput) {
+      updateStockSearch();
+      symInput.focus();
     }
   }
 
   /* ---- MODAL HELPERS ---- */
   function clearErrors() {
-    ['p-symbol-err', 'p-qty-err', 'p-price-err', 'p-stock-err'].forEach(id => {
+    ['p-symbol-err', 'p-qty-err', 'p-price-err'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = '';
     });
@@ -427,6 +635,8 @@
       const el = document.getElementById(id);
       if (el) el.classList.remove('error');
     });
+    const priceInput = document.getElementById('p-price');
+    if (priceInput) delete priceInput.dataset.autoFilled;
   }
 
   function openAddModal() {
@@ -449,13 +659,19 @@
 
     refreshCategorySelect();
     document.getElementById('p-category').value = '';
-    onCategoryChange();
+    
+    const clearBtn = document.getElementById('p-stock-clear-btn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    closeStockDropdown();
 
     App.openModal('modal-plan');
     setTimeout(() => {
       const inp = document.getElementById('p-symbol');
-      if (inp) inp.focus();
-    }, 50);
+      if (inp) {
+        inp.focus();
+        updateStockSearch();
+      }
+    }, 100);
   }
 
   function openEditModal(id) {
@@ -482,19 +698,17 @@
 
     const catId = plan.categoryId || '';
     document.getElementById('p-category').value = catId;
-    onCategoryChange();
+    document.getElementById('p-symbol').value = plan.symbol;
 
-    if (catId) {
-      document.getElementById('p-stock-select').value = plan.symbol;
-    } else {
-      document.getElementById('p-symbol').value = plan.symbol;
-    }
+    const clearBtn = document.getElementById('p-stock-clear-btn');
+    if (clearBtn) clearBtn.style.display = plan.symbol ? 'block' : 'none';
+    closeStockDropdown();
 
     App.openModal('modal-plan');
     setTimeout(() => {
       const inp = document.getElementById('p-symbol');
       if (inp) inp.focus();
-    }, 50);
+    }, 100);
   }
 
   function validateAndSave() {
@@ -511,22 +725,13 @@
     const monthEl = document.getElementById('p-month');
     const monthKey = (monthEl && monthEl.value) ? monthEl.value : (selectedMonthKey !== 'all' ? selectedMonthKey : currentMonthKey());
 
-    let symbol = '';
+    let symbol = (document.getElementById('p-symbol').value || '').trim().toUpperCase();
     let valid = true;
 
-    if (catId) {
-      symbol = document.getElementById('p-stock-select').value;
-      if (!symbol) {
-        document.getElementById('p-stock-err').textContent = 'Please select a stock';
-        valid = false;
-      }
-    } else {
-      symbol = (document.getElementById('p-symbol').value || '').trim().toUpperCase();
-      if (!symbol) {
-        document.getElementById('p-symbol-err').textContent = 'Symbol is required';
-        document.getElementById('p-symbol').classList.add('error');
-        valid = false;
-      }
+    if (!symbol) {
+      document.getElementById('p-symbol-err').textContent = 'Stock symbol is required';
+      document.getElementById('p-symbol').classList.add('error');
+      valid = false;
     }
 
     if (!qty || qty <= 0) {
@@ -688,13 +893,51 @@
     const btnAdd = document.getElementById('btn-add-plan');
     const btnSave = document.getElementById('btn-save-plan');
     const catSel = document.getElementById('p-category');
-    const stockSel = document.getElementById('p-stock-select');
+    const symInput = document.getElementById('p-symbol');
+    const clearBtn = document.getElementById('p-stock-clear-btn');
+    const dropdown = document.getElementById('p-stock-dropdown');
     const monthSel = document.getElementById('plan-month-select');
 
     if (btnAdd) btnAdd.addEventListener('click', openAddModal);
     if (btnSave) btnSave.addEventListener('click', validateAndSave);
     if (catSel) catSel.addEventListener('change', onCategoryChange);
-    if (stockSel) stockSel.addEventListener('change', onStockSelectChange);
+
+    if (symInput) {
+      symInput.addEventListener('input', updateStockSearch);
+      symInput.addEventListener('focus', updateStockSearch);
+      symInput.addEventListener('keydown', handleStockInputKeydown);
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', e => {
+        e.preventDefault();
+        if (symInput) {
+          symInput.value = '';
+          symInput.focus();
+        }
+        clearBtn.style.display = 'none';
+        updateStockSearch();
+      });
+    }
+
+    if (dropdown) {
+      dropdown.addEventListener('mousedown', e => {
+        const item = e.target.closest('.stock-dropdown-item');
+        if (item) {
+          const idx = parseInt(item.dataset.idx, 10);
+          if (!isNaN(idx) && currentFilteredStocks[idx]) {
+            e.preventDefault();
+            selectStockFromItem(currentFilteredStocks[idx]);
+          }
+        }
+      });
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.stock-search-wrap')) {
+        closeStockDropdown();
+      }
+    });
 
     if (monthSel) {
       monthSel.addEventListener('change', e => {
@@ -706,7 +949,14 @@
     const modalPlan = document.getElementById('modal-plan');
     if (modalPlan) {
       modalPlan.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') validateAndSave();
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          // If dropdown is open, don't submit immediately if handled by input
+          const dd = document.getElementById('p-stock-dropdown');
+          if (dd && dd.classList.contains('open') && activeDropdownIndex >= 0) {
+            return;
+          }
+          validateAndSave();
+        }
       });
     }
 
