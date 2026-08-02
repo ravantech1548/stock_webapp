@@ -6,7 +6,8 @@
     holdings: P + 'holdings',
     prices:   P + 'prices',
     funds:    P + 'funds',
-    settings: P + 'settings'
+    settings: P + 'settings',
+    plans:    P + 'plans'
   };
 
   function read(key) {
@@ -19,9 +20,21 @@
     }
   }
 
+  const SYNC_KEY_MAP = {
+    [P + 'holdings']: 'holdings',
+    [P + 'funds']:    'funds',
+    [P + 'plans']:    'plans',
+    [P + 'settings']: 'settings'
+  };
+
   function write(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      // Sync to Firebase if enabled (fire-and-forget; prices are not synced)
+      const syncKey = SYNC_KEY_MAP[key];
+      if (syncKey && window.DB && window.DB.isEnabled()) {
+        window.DB.push(syncKey, value);
+      }
       return true;
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
@@ -108,6 +121,31 @@
     return write(KEYS.funds, funds);
   }
 
+  /* ---- PLANS ---- */
+  function getPlans() {
+    return read(KEYS.plans) || [];
+  }
+
+  function savePlans(plans) {
+    return write(KEYS.plans, plans);
+  }
+
+  function upsertPlan(plan) {
+    const list = getPlans();
+    const idx = list.findIndex(p => p.id === plan.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...plan, updatedAt: new Date().toISOString() };
+    } else {
+      list.push({ ...plan, addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    }
+    return write(KEYS.plans, list);
+  }
+
+  function deletePlan(id) {
+    const list = getPlans().filter(p => p.id !== id);
+    return write(KEYS.plans, list);
+  }
+
   /* ---- SETTINGS ---- */
   function getSettings() {
     return read(KEYS.settings) || {
@@ -125,6 +163,7 @@
     getHoldings, saveHoldings, upsertHolding, deleteHolding,
     getPrices, getPrice, setPrice, setPrices,
     getFunds, saveFunds, addFundTransaction, deleteFundTransaction, setMonthlyTarget,
+    getPlans, savePlans, upsertPlan, deletePlan,
     getSettings, saveSettings
   };
 })();

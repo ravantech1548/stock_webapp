@@ -50,6 +50,7 @@
       panel.classList.toggle('active', panel.id === 'tab-' + tabName);
     });
     if (tabName === 'funds') Funds.render();
+    if (tabName === 'plan') Plan.render();
   }
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -158,14 +159,18 @@
   }
 
   /* ---- BOOT ---- */
-  function boot() {
+  async function boot() {
     window.App = { openModal, closeModal, toast };
+
+    // Load from Firebase before rendering (falls back to localStorage if unconfigured)
+    if (window.DB) await DB.init();
 
     initLogin();
     seedSampleData();
 
     Holdings.init();
     Funds.init();
+    Plan.init();
     PriceService.init();
     CSVParser.init();
 
