@@ -679,7 +679,7 @@
   }
 
   function openEditModal(id) {
-    const plan = Storage.getPlans().find(p => p.id === id);
+    const plan = Storage.getPlans().find(p => String(p.id) === String(id));
     if (!plan) return;
 
     clearErrors();
@@ -784,7 +784,7 @@
 
   /* ---- EXECUTE PLAN (CONSUMES MONTHLY FUND BUDGET) ---- */
   function executePlan(id) {
-    const plan = Storage.getPlans().find(p => p.id === id);
+    const plan = Storage.getPlans().find(p => String(p.id) === String(id));
     if (!plan || plan.status === 'executed') return;
 
     const targetVal = plan.qty * plan.targetPrice;
@@ -853,7 +853,7 @@
 
   /* ---- DELETE PLAN ---- */
   function deletePlan(id) {
-    const plan = Storage.getPlans().find(p => p.id === id);
+    const plan = Storage.getPlans().find(p => String(p.id) === String(id));
     if (!plan) return;
     pendingDeleteId = id;
 
