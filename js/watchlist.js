@@ -3,6 +3,2453 @@
 
   /* ---- BUILT-IN NIFTY PRESETS (All 11 NSE Sectoral Watchlists) ---- */
   const NIFTY_PRESETS = {
+    "ZERODHA-LIST": {
+        "id": "ZERODHA-LIST",
+        "name": "Zerodha List",
+        "description": "Custom Zerodha Watchlist with 190+ tracked stocks and ETFs",
+        "stocks": [
+            {
+                "symbol": "AXISBANK",
+                "name": "Axis Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "EQUITASBNK",
+                "name": "Equitas Small Finance Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HDFCBANK",
+                "name": "HDFC Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ICICIBANK",
+                "name": "ICICI Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IDBI",
+                "name": "IDBI Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IDFCFIRSTB",
+                "name": "IDFC First Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INDUSINDBK",
+                "name": "IndusInd Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SBIN",
+                "name": "State Bank of India",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SOUTHBANK",
+                "name": "The South Indian Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "YESBANK",
+                "name": "Yes Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BAJFINANCE",
+                "name": "Bajaj Finance Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SAMMAANCAP",
+                "name": "Sammaan Capital Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LICHSGFIN",
+                "name": "LIC Housing Finance Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MANAPPURAM",
+                "name": "Manappuram Finance Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PFC",
+                "name": "Power Finance Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PFS",
+                "name": "PTC India Financial Services Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PTC",
+                "name": "PTC India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PTL",
+                "name": "PTL Enterprises Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RECLTD",
+                "name": "REC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SHRIRAMFIN",
+                "name": "Shriram Finance Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HDFCAMC",
+                "name": "HDFC Asset Management Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NAM-INDIA",
+                "name": "Nippon Life India Asset Management Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CDSL",
+                "name": "Central Depository Services (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IVC",
+                "name": "IL&FS Investment Managers Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ISEC",
+                "name": "ICICI Securities Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AUROPHARMA",
+                "name": "Aurobindo Pharma Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CIPLA",
+                "name": "Cipla Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GLAND",
+                "name": "Gland Pharma Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GLENMARK",
+                "name": "Glenmark Pharmaceuticals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IOLCP",
+                "name": "IOL Chemicals and Pharmaceuticals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JUBLPHARMA",
+                "name": "Jubilant Pharmova Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUNPHARMA",
+                "name": "Sun Pharmaceutical Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IEX",
+                "name": "Indian Energy Exchange Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BCG",
+                "name": "Brightcom Group Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BALMLAWRIE",
+                "name": "Balmer Lawrie & Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BLIL",
+                "name": "Balmer Lawrie Investments Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BPCL",
+                "name": "Bharat Petroleum Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "COALINDIA",
+                "name": "Coal India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GAIL",
+                "name": "GAIL (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GMDCLTD",
+                "name": "Gujarat Mineral Development Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HINDZINC",
+                "name": "Hindustan Zinc Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IOC",
+                "name": "Indian Oil Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JINDALSTEL",
+                "name": "JINDAL STEEL LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MAANALU",
+                "name": "Maan Aluminium Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MOIL",
+                "name": "MOIL Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NATIONALUM",
+                "name": "National Aluminium Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NLCINDIA",
+                "name": "NLC India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NMDC",
+                "name": "NMDC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NTPC",
+                "name": "NTPC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ONGC",
+                "name": "Oil & Natural Gas Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SAIL",
+                "name": "Steel Authority of India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TATASTEEL",
+                "name": "Tata Steel Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VEDL",
+                "name": "Vedanta Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HGINFRA",
+                "name": "H.G. Infra Engineering Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IRB",
+                "name": "IRB Infrastructure Developers Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IRCON",
+                "name": "Ircon International Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IRCTC",
+                "name": "Indian Railway Catering And Tourism Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JPASSOCIAT",
+                "name": "Jaiprakash Associates Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KEC",
+                "name": "KEC International Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LT",
+                "name": "Larsen & Toubro Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NBCC",
+                "name": "NBCC (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NCC",
+                "name": "NCC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PARSVNATH",
+                "name": "Parsvnath Developers Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RITES",
+                "name": "RITES Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SADBHAV",
+                "name": "Sadbhav Engineering Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SIMPLEXINF",
+                "name": "Simplex Infrastructures Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SOBHA",
+                "name": "Sobha Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SREINFRA",
+                "name": "SREI Infrastructure Finance Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KAJARIACER",
+                "name": "Kajaria Ceramics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "POKARNA",
+                "name": "Pokarna Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PRSMJOHNSN",
+                "name": "Prism Johnson Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ULTRACEMCO",
+                "name": "UltraTech Cement Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "EMBASSY",
+                "name": "Embassy Office Parks REIT",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "APLAPOLLO",
+                "name": "APL Apollo Tubes Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "APOLLOPIPE",
+                "name": "Apollo Pipes Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GRAPHITE",
+                "name": "Graphite India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HEG",
+                "name": "HEG Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GOACARBON",
+                "name": "Goa Carbon Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PCBL",
+                "name": "PCBL Chemical Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RAIN",
+                "name": "Rain Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GMBREW",
+                "name": "GM Breweries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IONEXCHANG",
+                "name": "ION Exchange (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VSTIND",
+                "name": "VST Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ARE&M",
+                "name": "Amara Raja Energy & Mobility Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ASHOKLEY",
+                "name": "Ashok Leyland Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BAJAJ-AUTO",
+                "name": "Bajaj Auto Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BANCOINDIA",
+                "name": "Banco Products (I) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GABRIEL",
+                "name": "Gabriel India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JAMNAAUTO",
+                "name": "Jamna Auto Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MINDACORP",
+                "name": "Minda Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "M&M",
+                "name": "Mahindra & Mahindra Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "OMAXAUTO",
+                "name": "Omax Autos Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SAMKRG",
+                "name": "Samkrg Pistons and Rings Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TALBROAUTO",
+                "name": "Talbros Automotive Components Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TMPV",
+                "name": "Tata Motors Passenger Vehicles Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TVSMOTOR",
+                "name": "TVS Motor Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DEN",
+                "name": "Den Networks Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GTPL",
+                "name": "GTPL Hathway Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HATHWAY",
+                "name": "Hathway Cable & Datacom Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PVRINOX",
+                "name": "PVR INOX Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SAREGAMA",
+                "name": "Saregama India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUNTV",
+                "name": "Sun TV Network Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NETWORK18",
+                "name": "Network18 Media & Investments Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TTML",
+                "name": "Tata Teleservices (Maharashtra) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ZEEL",
+                "name": "Zee Entertainment Enterprises Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AKSHOPTFBR",
+                "name": "Aksh Optifibre Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IDEA",
+                "name": "Vodafone Idea Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TATACOMM",
+                "name": "Tata Communications Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INDIGO",
+                "name": "InterGlobe Aviation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MANAKSIA",
+                "name": "Manaksia Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TCI",
+                "name": "Transport Corporation of India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TITAGARH",
+                "name": "TITAGARH RAIL SYSTEMS LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BORORENEW",
+                "name": "BOROSIL RENEWABLES LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MPSLTD",
+                "name": "MPS Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "UFLEX",
+                "name": "UFLEX Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "XPROINDIA",
+                "name": "Xpro India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PAKKA",
+                "name": "PAKKA LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BAJAJHIND",
+                "name": "Bajaj Hindusthan Sugar Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RENUKA",
+                "name": "Shree Renuka Sugars Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GRWRHITECH",
+                "name": "Garware Hi-Tech Films Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AVTNPL",
+                "name": "AVT Natural Products Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BRITANNIA",
+                "name": "Britannia Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RBA",
+                "name": "Restaurant Brands Asia Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "COLPAL",
+                "name": "Colgate Palmolive (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HATSUN",
+                "name": "Hatsun Agro Product Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "UMANGDAIRY",
+                "name": "Umang Dairies Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HINDUNILVR",
+                "name": "Hindustan Unilever Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JUBLFOOD",
+                "name": "Jubilant Foodworks Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MARICO",
+                "name": "Marico Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NESTLEIND",
+                "name": "Nestle India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PGHL",
+                "name": "Procter & Gamble Health Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PATANJALI",
+                "name": "Patanjali Foods Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TASTYBITE",
+                "name": "Tasty Bite Eatables Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TATACONSUM",
+                "name": "TATA CONSUMER PRODUCTS LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DMART",
+                "name": "Avenue Supermarts Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "FCONSUMER",
+                "name": "Future Consumer Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "FEL",
+                "name": "Future Enterprises Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "FRETAIL",
+                "name": "Future Retail Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SHOPERSTOP",
+                "name": "Shoppers Stop Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "V2RETAIL",
+                "name": "V2 Retail Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VMART",
+                "name": "V-Mart Retail Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BATAINDIA",
+                "name": "Bata India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RELAXO",
+                "name": "Relaxo Footwears Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BAJAJELEC",
+                "name": "Bajaj Electricals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CROMPTON",
+                "name": "Crompton Greaves Consumer Electricals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "FINCABLES",
+                "name": "Finolex Cables Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GODREJIND",
+                "name": "Godrej Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IFBIND",
+                "name": "IFB Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KEI",
+                "name": "KEI Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "POLYCAB",
+                "name": "Polycab India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VGUARD",
+                "name": "V-Guard Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VOLTAS",
+                "name": "Voltas Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ADANIGREEN",
+                "name": "Adani Green Energy Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ADANIPOWER",
+                "name": "Adani Power Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CGPOWER",
+                "name": "CG Power and Industrial Solutions Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GVPIL",
+                "name": "GE Power India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GVT&D",
+                "name": "GE Vernova T&D India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GREENPOWER",
+                "name": "Orient Green Power Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JPPOWER",
+                "name": "Jaiprakash Power Ventures Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KPIL",
+                "name": "Kalpataru Projects International Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NHPC",
+                "name": "NHPC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RPOWER",
+                "name": "Reliance Power Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SJVN",
+                "name": "SJVN Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUZLON",
+                "name": "Suzlon Energy Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TATAPOWER",
+                "name": "Tata Power Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TORNTPOWER",
+                "name": "Torrent Power Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "3IINFOLTD",
+                "name": "3i Infotech Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AFFLE",
+                "name": "Affle 3i Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CYIENT",
+                "name": "Cyient Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HAPPSTMNDS",
+                "name": "Happiest Minds Technologies Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INFY",
+                "name": "Infosys Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LTM",
+                "name": "LTM Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ROUTE",
+                "name": "ROUTE MOBILE LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUBEXLTD",
+                "name": "Subex Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TANLA",
+                "name": "Tanla Platforms Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TCS",
+                "name": "Tata Consultancy Services Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TECHM",
+                "name": "Tech Mahindra Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WIPRO",
+                "name": "Wipro Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LEMONTREE",
+                "name": "Lemon Tree Hotels Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ORIENTHOT",
+                "name": "Oriental Hotels Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ROHLTD",
+                "name": "Royal Orchid Hotels Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TAJGVK",
+                "name": "Taj GVK Hotels & Resorts Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ALOKINDS",
+                "name": "Alok Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JBFIND",
+                "name": "JBF Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NDL",
+                "name": "Nandan Denim Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ORBTEXP",
+                "name": "Orbit Exports Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PAGEIND",
+                "name": "Page Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RAYMOND",
+                "name": "Raymond Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SPAL",
+                "name": "S. P. Apparels Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TRIDENT",
+                "name": "Trident Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WELSPUNLIV",
+                "name": "Welspun Living Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ABB",
+                "name": "ABB India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HONAUT",
+                "name": "Honeywell Automation India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LMW",
+                "name": "LMW Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RELIANCE",
+                "name": "Reliance Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SIEMENS",
+                "name": "Siemens Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TITAN",
+                "name": "Titan Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BALAMINES",
+                "name": "Balaji Amines Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUDARCOLOR",
+                "name": "Sudarshan Colorants India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DEEPAKNTR",
+                "name": "Deepak Nitrite Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DEEPAKFERT",
+                "name": "Deepak Fertilizers and Petrochemicals Corporation Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ESTER",
+                "name": "Ester Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GNFC",
+                "name": "Gujarat Narmada Valley Fertilizers and Chemicals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KANCHI",
+                "name": "Kanchi Karpooram Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NAGARFERT",
+                "name": "Nagarjuna Fertilizers and Chemicals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ROSSARI",
+                "name": "Rossari Biotech Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TATACHEM",
+                "name": "Tata Chemicals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "UPL",
+                "name": "UPL Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "QUESS",
+                "name": "Quess Corp Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ASTRAMICRO",
+                "name": "Astra Microwave Products Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BDL",
+                "name": "Bharat Dynamics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HAL",
+                "name": "Hindustan Aeronautics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SIKA",
+                "name": "Sika Interplant Systems Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GUJGASLTD",
+                "name": "Gujarat Energy Limited (erstwhile Gujarat Gas Limited)",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MGL",
+                "name": "Mahanagar Gas Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JMFINANCIL",
+                "name": "JM Financial Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PAYTM",
+                "name": "One 97 Communications Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JSL",
+                "name": "Jindal Stainless Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JKPAPER",
+                "name": "JK Paper Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IVP",
+                "name": "IVP Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RALLIS",
+                "name": "Rallis India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ASALCBR",
+                "name": "Associated Alcohols & Breweries Ltd.",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BEML",
+                "name": "BEML Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CARTRADE",
+                "name": "Cartrade Tech Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "COCHINSHIP",
+                "name": "Cochin Shipyard Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DATAPATTNS",
+                "name": "Data Patterns (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GESHIP",
+                "name": "The Great Eastern Shipping Company Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GMRP&UI",
+                "name": "GMR Power and Urban Infra Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GUJENERGY",
+                "name": "GUJARAT ENERGY LIMITED",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IDEAFORGE",
+                "name": "Ideaforge Technology Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INTERARCH",
+                "name": "Interarch Building Solutions Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KAYNES",
+                "name": "Kaynes Technology India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KRBL",
+                "name": "KRBL Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KRN",
+                "name": "KRN Heat Exchanger and Refrigeration Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LICI",
+                "name": "Life Insurance Corporation Of India",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "LTFOODS",
+                "name": "LT Foods Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MICEL",
+                "name": "MIC Electronics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MOSCHIP",
+                "name": "Moschip Technologies Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MTARTECH",
+                "name": "Mtar Technologies Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NETWEB",
+                "name": "Netweb Technologies India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NITTAGELA",
+                "name": "Nitta Gelatin India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "OLAELEC",
+                "name": "Ola Electric Mobility Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PREMEXPLN",
+                "name": "Premier Explosives Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "RIR",
+                "name": "RIR Power Electronics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SCI",
+                "name": "Shipping Corporation Of India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SHAKTIPUMP",
+                "name": "Shakti Pumps (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SPANDANA",
+                "name": "Spandana Sphoorty Financial Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SUNTECK",
+                "name": "Sunteck Realty Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TIMKEN",
+                "name": "Timken India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TMCV",
+                "name": "Tata Motors Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VASWANI",
+                "name": "Vaswani Industries Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VBL",
+                "name": "Varun Beverages Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WAAREEENER",
+                "name": "Waaree Energies Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WEBELSOLAR",
+                "name": "Websol Energy System Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "JUNIORBEES",
+                "name": "Nippon India ETF Nifty Next 50 Junior BeES",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MID150BEES",
+                "name": "Nippon India ETF Nifty Midcap 150",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SILVERBEES",
+                "name": "Nippon India Silver ETF",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PHARMABEES",
+                "name": "Nippon India ETF Nifty Pharma",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GILT5YBEES",
+                "name": "Nippon India ETF Nifty 5 Year Benchmark G-Sec",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NIFTYBEES",
+                "name": "Nippon India ETF Nifty 50 BeES",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INFRABEES",
+                "name": "Nippon India ETF Nifty Infrastructure BeES",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GOLDBEES",
+                "name": "Nippon India ETF Gold BeES",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ITBEES",
+                "name": "Nippon India ETF Nifty IT",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SETFGOLD",
+                "name": "SBI ETF Gold",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SETFNIFBK",
+                "name": "SBI ETF Nifty Bank",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SETFNN50",
+                "name": "SBI ETF Nifty Next 50",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IDFNIFTYET",
+                "name": "Bandhan Nifty 50 ETF",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NIFTYETF",
+                "name": "Mirae Asset Nifty 50 ETF",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DIACABS",
+                "name": "Diamond Power Infrastructure Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CUPID",
+                "name": "Cupid Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ATHERENERG",
+                "name": "Ather Energy Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MAZDOCK",
+                "name": "Mazagon Dock Shipbuilders Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "GENUSPOWER",
+                "name": "Genus Power Infrastructures Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KALYANKJIL",
+                "name": "Kalyan Jewellers India Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "INDIANB",
+                "name": "Indian Bank",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "SENCO",
+                "name": "Senco Gold Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "NORTHARC",
+                "name": "Northern Arc Capital Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WELCORP",
+                "name": "Welspun Corp Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "WABAG",
+                "name": "VA Tech Wabag Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "J&KBANK",
+                "name": "The Jammu & Kashmir Bank Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IFCI",
+                "name": "IFCI Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "BBOX",
+                "name": "Black Box Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "REDINGTON",
+                "name": "Redington Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "IBULLSLTD",
+                "name": "Indiabulls Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TARIL",
+                "name": "Transformers And Rectifiers (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AEGISLOG",
+                "name": "Aegis Logistics Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "MEESHO",
+                "name": "Meesho Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "KERNEX",
+                "name": "Kernex Microsystems (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "CONCORD",
+                "name": "Concord Control Systems Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "HBLENGINE",
+                "name": "HBL Engineering Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "OFSS",
+                "name": "Oracle Financial Services Software Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "DIXON",
+                "name": "Dixon Technologies (India) Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VEDANT",
+                "name": "Vedant Asset Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VEDPOWER",
+                "name": "Vedanta Power Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VAML",
+                "name": "Vedanta Aluminium Metal Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VISL",
+                "name": "Vedanta Iron and Steel Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VOGL",
+                "name": "Vedanta Oil and Gas Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "AMAGI",
+                "name": "Amagi Media Labs Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "PINELABS",
+                "name": "Pine Labs Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "FLUOROCHEM",
+                "name": "Gujarat Fluorochemicals Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "E2E",
+                "name": "E2E Networks Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TDPOWERSYS",
+                "name": "TD Power Systems Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "VSSL",
+                "name": "Vardhman Special Steels Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "ITC",
+                "name": "ITC Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            },
+            {
+                "symbol": "TBZ",
+                "name": "Tribhovandas Bhimji Zaveri Limited",
+                "ltp": 0,
+                "changePct": 0,
+                "high52w": 0,
+                "low52w": 0
+            }
+        ]
+    },
     "NIFTY-100": {
         "id": "NIFTY-100",
         "name": "NIFTY 100",

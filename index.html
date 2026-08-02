@@ -321,8 +321,9 @@
   <div class="section-header">
     <div class="section-title">NIFTY Category Watchlists</div>
     <div class="btn-group">
-      <button class="btn btn-secondary" onclick="Watchlist.loadAllPresets()">⚡ Load NIFTY Presets</button>
-      <button class="btn btn-primary" id="btn-import-watchlist">&#8645; Import CSV/Excel</button>
+      <button class="btn btn-primary" onclick="Watchlist.loadPreset('ZERODHA-LIST')">🎯 Load Zerodha List</button>
+      <button class="btn btn-secondary" onclick="Watchlist.loadAllPresets()">⚡ Load All NIFTY Presets</button>
+      <button class="btn btn-secondary" id="btn-import-watchlist">&#8645; Import CSV/Excel</button>
       <input type="file" id="watchlist-file-input" accept=".csv,.xlsx,.xls" style="display:none" multiple>
     </div>
   </div>
