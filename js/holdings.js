@@ -288,14 +288,9 @@
 
   /* ---- TEMPLATE DOWNLOAD ---- */
   function downloadTemplate() {
-    const csv = 'Symbol,Name,Qty,AvgBuyPrice,Exchange\nRELIANCE,Reliance Industries Ltd,10,2500.00,NSE\nTCS,Tata Consultancy Services,5,3621.00,NSE\nINFY,Infosys Ltd,8,1780.50,NSE\n';
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'holdings_template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    if (window.CSVParser && window.CSVParser.downloadTemplate) {
+      window.CSVParser.downloadTemplate('xlsx');
+    }
   }
 
   /* ---- INIT ---- */

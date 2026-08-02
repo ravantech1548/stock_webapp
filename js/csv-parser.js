@@ -3,61 +3,91 @@
 
   const { generateId, escHtml } = window.Utils;
 
-  // Known broker header signatures → column mappings
+  // Number cleaner for strings like "₹ 2,450.00", "1,000", "(50)"
+  function parseCleanNum(val) {
+    if (val == null || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    let s = String(val).trim()
+      .replace(/[₹$,\s]/g, '') // remove currency symbols, commas, spaces
+      .replace(/\(([^)]+)\)/, '-$1'); // handle accounting negatives like (100) -> -100
+    const num = parseFloat(s);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Symbol cleaner: Strips broker series like "-EQ", "-BE", ".NS", ".BO"
+  function cleanSymbol(val) {
+    return String(val || '')
+      .trim()
+      .toUpperCase()
+      .replace(/\.(NS|BO)$/i, '')
+      .replace(/-(EQ|BE|SM|IL|BZ|GB|SG|BL|MF|GS|RL|MT|PP)$/i, '')
+      .trim();
+  }
+
+  // Known broker header signatures & row mappers
   const BROKER_PROFILES = [
     {
       name: 'Zerodha',
-      detect: headers => headers.includes('instrument') && (headers.includes('avg cost') || headers.includes('avgcost')),
+      detect: headers => headers.includes('instrument') && (headers.includes('avg cost') || headers.includes('avgcost') || headers.includes('cur val')),
       map: row => ({
-        symbol: clean(col(row, 'instrument')),
-        name: clean(col(row, 'instrument')),
-        qty: parseFloat(col(row, 'qty', 'qty.', 'quantity', 'net qty')) || 0,
-        avgBuyPrice: parseFloat(col(row, 'avg. cost', 'avg cost', 'avgcost', 'average cost')) || 0,
+        symbol: cleanSymbol(col(row, 'instrument', 'symbol')),
+        name: clean(col(row, 'instrument', 'symbol')),
+        qty: parseCleanNum(col(row, 'qty', 'qty.', 'quantity', 'net qty')),
+        avgBuyPrice: parseCleanNum(col(row, 'avg. cost', 'avg cost', 'avgcost', 'average cost', 'buy avg')),
         exchange: 'NSE'
       })
     },
     {
       name: 'Groww',
-      detect: headers => headers.includes('symbol') && (headers.includes('avg cost') || headers.includes('avgcost')) && (headers.includes('quantity') || headers.includes('qty')),
+      detect: headers => (headers.includes('stocks') || headers.includes('company') || headers.includes('symbol')) && (headers.includes('avg cost') || headers.includes('avgcost') || headers.includes('shares') || headers.includes('quantity')),
       map: row => ({
-        symbol: clean(col(row, 'symbol')),
-        name: clean(col(row, 'stocks', 'name', 'company', 'symbol')),
-        qty: parseFloat(col(row, 'quantity', 'qty')) || 0,
-        avgBuyPrice: parseFloat(col(row, 'avg cost', 'avgcost', 'average cost', 'avg buy price')) || 0,
+        symbol: cleanSymbol(col(row, 'symbol', 'stocks', 'company', 'scrip')),
+        name: clean(col(row, 'stocks', 'company', 'name', 'symbol')),
+        qty: parseCleanNum(col(row, 'quantity', 'qty', 'shares', 'net qty')),
+        avgBuyPrice: parseCleanNum(col(row, 'avg cost', 'avgcost', 'average cost', 'avg buy price', 'buy price')),
         exchange: 'NSE'
       })
     },
     {
-      name: 'Standard',
-      detect: headers => headers.includes('symbol') && (headers.includes('avgbuyprice') || headers.includes('avg buy price') || headers.includes('avgprice')),
+      name: 'AngelOne / Upstox / Dhan',
+      detect: headers => (headers.includes('scrip') || headers.includes('symbol') || headers.includes('trading symbol')) && (headers.includes('buy price') || headers.includes('average price') || headers.includes('avg price')),
       map: row => ({
-        symbol: clean(col(row, 'symbol')),
-        name: clean(col(row, 'name', 'company', 'symbol')),
-        qty: parseFloat(col(row, 'qty', 'quantity', 'shares')) || 0,
-        avgBuyPrice: parseFloat(col(row, 'avgbuyprice', 'avg buy price', 'avgprice', 'avg price')) || 0,
-        exchange: (col(row, 'exchange') || 'NSE').toUpperCase()
+        symbol: cleanSymbol(col(row, 'trading symbol', 'scrip', 'symbol', 'symbol name', 'instrument')),
+        name: clean(col(row, 'company name', 'scrip name', 'name', 'scrip', 'symbol')),
+        qty: parseCleanNum(col(row, 'qty', 'quantity', 'net qty', 'total qty', 'holdings')),
+        avgBuyPrice: parseCleanNum(col(row, 'buy price', 'average price', 'avg price', 'avg buy price', 'buy avg')),
+        exchange: (col(row, 'exchange', 'market') || 'NSE').toUpperCase().includes('BSE') ? 'BSE' : 'NSE'
+      })
+    },
+    {
+      name: 'Standard / Generic',
+      detect: headers => (headers.includes('symbol') || headers.includes('scrip') || headers.includes('instrument')) && (headers.includes('qty') || headers.includes('quantity') || headers.includes('shares')),
+      map: row => ({
+        symbol: cleanSymbol(col(row, 'symbol', 'scrip', 'instrument', 'ticker', 'stock')),
+        name: clean(col(row, 'name', 'company', 'company name', 'stock name', 'symbol')),
+        qty: parseCleanNum(col(row, 'qty', 'qty.', 'quantity', 'shares', 'net qty', 'holdings')),
+        avgBuyPrice: parseCleanNum(col(row, 'avgbuyprice', 'avg buy price', 'avg price', 'average price', 'avg cost', 'avg. cost', 'buy price', 'cost', 'price')),
+        exchange: (col(row, 'exchange') || 'NSE').toUpperCase().includes('BSE') ? 'BSE' : 'NSE'
       })
     }
   ];
 
   function clean(val) {
-    return String(val || '').trim().replace(/\.(NS|BO)$/i, '').toUpperCase();
+    return String(val || '').trim();
   }
 
-  function normalizeHeaders(headers) {
-    return headers.map(h => String(h).trim().toLowerCase().replace(/[^a-z0-9 ]/g, ''));
+  function normalizeHeader(h) {
+    return String(h || '').trim().toLowerCase().replace(/[^a-z0-9 ]/g, '');
   }
 
-  // Fuzzy column lookup: strips punctuation/spaces from both key and candidates
+  // Fuzzy column lookup
   function col(row, ...names) {
     const keys = Object.keys(row);
     for (const name of names) {
-      // Direct match first
       if (row[name] !== undefined && row[name] !== '') return row[name];
-      // Alphanumeric-only match (handles "Qty." → "qty", "Avg. cost" → "avg cost")
-      const norm = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const found = keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === norm);
-      if (found && row[found] !== undefined) return row[found];
+      const norm = normalizeHeader(name);
+      const found = keys.find(k => normalizeHeader(k) === norm);
+      if (found && row[found] !== undefined && row[found] !== '') return row[found];
     }
     return '';
   }
@@ -67,7 +97,7 @@
   let validRows = [];
   let errorRows = [];
 
-  /* ---- FILE PICKER ---- */
+  /* ---- FILE PICKER & MODAL ---- */
   function init() {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -77,39 +107,50 @@
     const backBtn = document.getElementById('import-back');
     const cancelBtn = document.getElementById('import-cancel');
 
-    importBtn.addEventListener('click', () => {
-      resetImportModal();
-      App.openModal('modal-import');
-    });
+    if (importBtn) {
+      importBtn.addEventListener('click', () => {
+        resetImportModal();
+        App.openModal('modal-import');
+      });
+    }
 
-    browseLink.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('click', () => fileInput.click());
+    if (browseLink) browseLink.addEventListener('click', () => fileInput && fileInput.click());
+    if (dropZone) {
+      dropZone.addEventListener('click', () => fileInput && fileInput.click());
+      dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+      });
+    }
 
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
-    });
+    if (fileInput) {
+      fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+        fileInput.value = '';
+      });
+    }
 
-    fileInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (file) handleFile(file);
-      fileInput.value = '';
-    });
-
-    confirmBtn.addEventListener('click', executeImport);
-    backBtn.addEventListener('click', resetImportModal);
-    cancelBtn.addEventListener('click', () => App.closeModal('modal-import'));
+    if (confirmBtn) confirmBtn.addEventListener('click', executeImport);
+    if (backBtn) backBtn.addEventListener('click', resetImportModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', () => App.closeModal('modal-import'));
   }
 
   function resetImportModal() {
-    document.getElementById('import-step-1').style.display = '';
-    document.getElementById('import-step-2').style.display = 'none';
-    document.getElementById('import-confirm').style.display = 'none';
-    document.getElementById('import-back').style.display = 'none';
+    const step1 = document.getElementById('import-step-1');
+    const step2 = document.getElementById('import-step-2');
+    const confirmBtn = document.getElementById('import-confirm');
+    const backBtn = document.getElementById('import-back');
+
+    if (step1) step1.style.display = '';
+    if (step2) step2.style.display = 'none';
+    if (confirmBtn) confirmBtn.style.display = 'none';
+    if (backBtn) backBtn.style.display = 'none';
+
     document.getElementById('broker-detected').innerHTML = '';
     document.getElementById('import-summary').textContent = '';
     document.getElementById('import-preview-thead').innerHTML = '';
@@ -130,9 +171,9 @@
 
   function readCSV(file) {
     Papa.parse(file, {
-      header: true,
+      header: false, // Parse as 2D array first to detect multi-row header offset
       skipEmptyLines: true,
-      complete: result => processData(result.data),
+      complete: result => processRawGrid(result.data),
       error: err => App.toast('CSV parse error: ' + err.message, 'error')
     });
   }
@@ -143,8 +184,8 @@
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
-        processData(json);
+        const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        processRawGrid(grid);
       } catch (err) {
         App.toast('Excel read error: ' + err.message, 'error');
       }
@@ -152,55 +193,76 @@
     reader.readAsArrayBuffer(file);
   }
 
-  /* ---- PARSE & DETECT ---- */
-  function processData(data) {
-    if (!data || data.length === 0) {
+  /* ---- DETECT HEADER ROW & PROCESS ---- */
+  function processRawGrid(grid) {
+    if (!grid || grid.length === 0) {
       App.toast('File appears to be empty.', 'error');
       return;
     }
 
+    // Find header row index by looking for key indicators
+    const headerKeywords = ['instrument', 'symbol', 'scrip', 'ticker', 'qty', 'quantity', 'shares', 'avg cost', 'avg buy price', 'average price', 'buy price'];
+    let headerRowIdx = 0;
+    let maxMatchCount = 0;
+
+    for (let r = 0; r < Math.min(grid.length, 15); r++) {
+      const row = grid[r];
+      if (!Array.isArray(row)) continue;
+      const normalizedCells = row.map(c => normalizeHeader(c));
+      const matchCount = headerKeywords.filter(kw => normalizedCells.some(cell => cell.includes(kw))).length;
+      if (matchCount > maxMatchCount) {
+        maxMatchCount = matchCount;
+        headerRowIdx = r;
+      }
+    }
+
+    const headers = grid[headerRowIdx].map(h => String(h || '').trim());
+    const dataRows = grid.slice(headerRowIdx + 1);
+
+    // Convert to array of objects
+    const dataObjects = dataRows
+      .filter(row => Array.isArray(row) && row.some(cell => cell !== '' && cell != null))
+      .map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          if (h) obj[h] = row[i] !== undefined ? row[i] : '';
+        });
+        return obj;
+      });
+
+    processDataObjects(dataObjects, headers);
+  }
+
+  function processDataObjects(data, rawHeaders) {
+    if (!data || data.length === 0) {
+      App.toast('No tabular data found in file.', 'error');
+      return;
+    }
+
     parsedRows = data;
-    const rawHeaders = Object.keys(data[0]);
-    const normHeaders = normalizeHeaders(rawHeaders);
+    const normHeaders = rawHeaders.map(h => normalizeHeader(h));
 
-    brokerProfile = BROKER_PROFILES.find(p => p.detect(normHeaders)) || null;
-
-    // Case-insensitive row mapper
-    const caseInsensitiveRow = row => {
-      const out = {};
-      Object.keys(row).forEach(k => { out[k.trim().toLowerCase()] = row[k]; out[k] = row[k]; });
-      return out;
-    };
+    brokerProfile = BROKER_PROFILES.find(p => p.detect(normHeaders)) || BROKER_PROFILES[BROKER_PROFILES.length - 1];
 
     validRows = [];
     errorRows = [];
-    parsedRows.forEach((rawRow, idx) => {
-      const row = caseInsensitiveRow(rawRow);
-      let mapped;
-      if (brokerProfile) {
-        mapped = brokerProfile.map(row);
-      } else {
-        // Fallback generic: fuzzy-match common column names
-        mapped = {
-          symbol: clean(col(row, 'symbol', 'scrip', 'instrument', 'ticker', 'stock')),
-          name: clean(col(row, 'name', 'company', 'stock name', 'instrument', 'symbol')),
-          qty: parseFloat(col(row, 'qty', 'qty.', 'quantity', 'shares', 'net qty', 'holdings')) || 0,
-          avgBuyPrice: parseFloat(col(row, 'avgbuyprice', 'avg buy price', 'avg price', 'average price', 'avg cost', 'avg. cost', 'buy price', 'cost')) || 0,
-          exchange: (col(row, 'exchange') || 'NSE').toUpperCase()
-        };
-      }
 
-      // Validation
+    parsedRows.forEach((rawRow, idx) => {
+      const mapped = brokerProfile.map(rawRow);
+
       const errs = [];
-      if (!mapped.symbol) errs.push('Symbol missing');
-      if (!mapped.qty || mapped.qty <= 0) errs.push('Qty invalid');
-      if (!mapped.avgBuyPrice || mapped.avgBuyPrice <= 0) errs.push('Avg price invalid');
+      if (!mapped.symbol) errs.push('Symbol is missing');
+      if (!mapped.qty || mapped.qty <= 0) errs.push(`Invalid quantity (${mapped.qty})`);
+      if (!mapped.avgBuyPrice || mapped.avgBuyPrice <= 0) errs.push(`Invalid avg buy price (${mapped.avgBuyPrice})`);
       if (!['NSE', 'BSE'].includes(mapped.exchange)) mapped.exchange = 'NSE';
 
       if (errs.length > 0) {
-        errorRows.push({ row: idx + 2, symbol: mapped.symbol || '?', errors: errs });
+        // Skip totally blank rows silently, log row with errors
+        if (mapped.symbol || mapped.qty > 0) {
+          errorRows.push({ row: idx + 2, symbol: mapped.symbol || '(Unknown)', errors: errs });
+        }
       } else {
-        mapped.symbol = mapped.symbol.toUpperCase();
+        mapped.symbol = cleanSymbol(mapped.symbol);
         mapped.name = mapped.name || mapped.symbol;
         validRows.push(mapped);
       }
@@ -216,44 +278,42 @@
     document.getElementById('import-confirm').style.display = '';
     document.getElementById('import-back').style.display = '';
 
-    // Broker badge
     const brokerEl = document.getElementById('broker-detected');
-    if (brokerProfile) {
-      brokerEl.innerHTML = `<div class="broker-badge">&#10003; Detected: ${escHtml(brokerProfile.name)} format</div>`;
+    if (brokerProfile && brokerProfile.name !== 'Standard / Generic') {
+      brokerEl.innerHTML = `<div class="broker-badge">&#10003; Detected format: <strong>${escHtml(brokerProfile.name)}</strong></div>`;
     } else {
       brokerEl.innerHTML = `<div class="broker-badge" style="background:#fef3c7;color:#92400e">&#9888; Generic format detected</div>`;
     }
 
-    // Summary
     document.getElementById('import-summary').textContent =
-      `${validRows.length} valid row(s) ready to import${errorRows.length > 0 ? `, ${errorRows.length} row(s) with errors (skipped)` : ''}.`;
+      `${validRows.length} valid row(s) recognized${errorRows.length > 0 ? `, ${errorRows.length} row(s) skipped with issues` : ''}.`;
 
-    // Preview table (first 5 valid rows)
     const thead = document.getElementById('import-preview-thead');
     const tbody = document.getElementById('import-preview-tbody');
-    thead.innerHTML = '<th>Symbol</th><th>Name</th><th>Qty</th><th>Avg Buy Price</th><th>Exchange</th>';
-    tbody.innerHTML = validRows.slice(0, 5).map(r => `
+    thead.innerHTML = '<th>Symbol</th><th>Company Name</th><th>Qty</th><th>Avg Buy Price</th><th>Exchange</th>';
+    
+    tbody.innerHTML = validRows.slice(0, 6).map(r => `
       <tr>
-        <td>${escHtml(r.symbol)}</td>
+        <td><strong>${escHtml(r.symbol)}</strong></td>
         <td>${escHtml(r.name)}</td>
         <td>${r.qty}</td>
         <td>₹${r.avgBuyPrice.toFixed(2)}</td>
-        <td>${escHtml(r.exchange)}</td>
+        <td><span class="exchange-badge">${escHtml(r.exchange)}</span></td>
       </tr>
-    `).join('') + (validRows.length > 5 ? `<tr><td colspan="5" style="text-align:center;color:#64748b">…and ${validRows.length - 5} more</td></tr>` : '');
+    `).join('') + (validRows.length > 6 ? `<tr><td colspan="5" style="text-align:center;color:#64748b;padding:.5rem">…and ${validRows.length - 6} more rows</td></tr>` : '');
 
-    // Errors
     const errContainer = document.getElementById('import-error-container');
     if (errorRows.length > 0) {
       errContainer.innerHTML = `<div class="import-error-list">
-        <strong>Skipped rows with errors:</strong>
-        <ul>${errorRows.map(e => `<li>Row ${e.row} (${escHtml(e.symbol)}): ${e.errors.join(', ')}</li>`).join('')}</ul>
+        <strong>Skipped rows:</strong>
+        <ul>${errorRows.slice(0, 5).map(e => `<li>Row ${e.row} (${escHtml(e.symbol)}): ${e.errors.join(', ')}</li>`).join('')}</ul>
+        ${errorRows.length > 5 ? `<p style="margin-top:.25rem;font-size:.75rem">...and ${errorRows.length - 5} other error rows.</p>` : ''}
       </div>`;
     } else {
       errContainer.innerHTML = '';
     }
 
-    document.getElementById('import-confirm').disabled = validRows.length === 0;
+    document.getElementById('import-confirm').disabled = (validRows.length === 0);
   }
 
   /* ---- EXECUTE IMPORT ---- */
@@ -268,7 +328,10 @@
 
     validRows.forEach(row => {
       if (existingMap[row.symbol]) {
-        if (strategy === 'skip') { skipped++; return; }
+        if (strategy === 'skip') {
+          skipped++;
+          return;
+        }
         Storage.upsertHolding({
           ...existingMap[row.symbol],
           qty: row.qty,
@@ -281,7 +344,7 @@
         Storage.upsertHolding({
           id: generateId(),
           symbol: row.symbol,
-          name: row.name,
+          name: row.name || row.symbol,
           qty: row.qty,
           avgBuyPrice: row.avgBuyPrice,
           exchange: row.exchange,
@@ -292,15 +355,49 @@
     });
 
     App.closeModal('modal-import');
-    Holdings.render();
-    Funds.render();
+    if (window.Holdings) Holdings.render();
+    if (window.Funds) Funds.render();
 
     const parts = [];
     if (added > 0) parts.push(`${added} added`);
     if (updated > 0) parts.push(`${updated} updated`);
     if (skipped > 0) parts.push(`${skipped} skipped`);
-    App.toast('Import complete: ' + parts.join(', ') + '.', 'success');
+    App.toast(`Holdings import complete: ${parts.join(', ')}.`, 'success');
+
+    // Auto-fetch prices for all holdings
+    if (window.PriceService) {
+      setTimeout(() => PriceService.fetchAll(), 400);
+    }
   }
 
-  window.CSVParser = { init };
+  /* ---- SAMPLE TEMPLATES (CSV & EXCEL) ---- */
+  function downloadTemplate(type) {
+    const data = [
+      { Symbol: 'RELIANCE', 'Company Name': 'Reliance Industries Ltd', Qty: 10, 'Avg Buy Price': 2450.00, Exchange: 'NSE' },
+      { Symbol: 'TCS', 'Company Name': 'Tata Consultancy Services', Qty: 5, 'Avg Buy Price': 3650.00, Exchange: 'NSE' },
+      { Symbol: 'INFY', 'Company Name': 'Infosys Ltd', Qty: 8, 'Avg Buy Price': 1750.50, Exchange: 'NSE' },
+      { Symbol: 'HDFCBANK', 'Company Name': 'HDFC Bank Ltd', Qty: 12, 'Avg Buy Price': 1600.00, Exchange: 'NSE' },
+      { Symbol: 'TATAMOTORS', 'Company Name': 'Tata Motors Ltd', Qty: 15, 'Avg Buy Price': 920.00, Exchange: 'NSE' }
+    ];
+
+    if (type === 'xlsx' && typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Holdings');
+      XLSX.writeFile(wb, 'stock_holdings_template.xlsx');
+      App.toast('Excel template downloaded.', 'success');
+    } else {
+      const csv = Papa.unparse(data);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stock_holdings_template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      App.toast('CSV template downloaded.', 'success');
+    }
+  }
+
+  window.CSVParser = { init, downloadTemplate, cleanSymbol, parseCleanNum };
 })();

@@ -537,12 +537,48 @@ tfoot td {
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 
 /* ===== WATCHLIST CATEGORY GRID ===== */
-.wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
-.wl-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; display:flex; flex-direction:column; gap:.5rem; }
-.wl-card-name { font-weight:700; font-size:.95rem; color:var(--text); }
+.wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; margin-top:1rem; }
+.wl-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem; display:flex; flex-direction:column; gap:.5rem; box-shadow:var(--shadow); transition:transform .15s ease, box-shadow .15s ease; }
+.wl-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.wl-card-name { font-weight:700; font-size:1.05rem; color:var(--text); }
 .wl-card-meta { font-size:.78rem; color:var(--text-muted); }
 
-/* ===== PLAN STATUS BADGES ===== */
-.badge { display:inline-flex; align-items:center; padding:.15rem .55rem; border-radius:99px; font-size:.72rem; font-weight:600; }
+/* ===== BADGES & SYNC STATUS ===== */
+.badge { display:inline-flex; align-items:center; padding:.2rem .6rem; border-radius:99px; font-size:.72rem; font-weight:600; white-space:nowrap; }
 .badge-planned  { background:#fef9c3; color:#854d0e; }
 .badge-executed { background:var(--gain-bg); color:var(--gain); }
+.badge-buyzone  { background:#dcfce7; color:#15803d; border:1px solid #86efac; animation: pulse 2s infinite ease-in-out; }
+.badge-priority-high { background:#fee2e2; color:#b91c1c; font-weight:700; }
+.badge-priority-med  { background:#fef3c7; color:#b45309; }
+.badge-priority-low  { background:#f1f5f9; color:#475569; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .85; transform: scale(1.03); }
+}
+
+/* Cloud Sync status in Topbar */
+#cloud-sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  color: #cbd5e1;
+  background: rgba(255,255,255,.08);
+  padding: .25rem .6rem;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.12);
+  user-select: none;
+}
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.sync-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.sync-dot.syncing { background: #38bdf8; animation: spin 1s linear infinite; }
+.sync-dot.error { background: #ef4444; }
+.sync-dot.offline { background: #94a3b8; }
+.row-highlight { background-color: #f0f9ff !important; }
+

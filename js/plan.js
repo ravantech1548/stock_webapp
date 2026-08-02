@@ -5,151 +5,235 @@
 
   /* ---- SUMMARY CARDS ---- */
   function updateSummaryCards(plans) {
-    var planned   = plans.filter(function (p) { return p.status === 'planned'; }).length;
-    var executed  = plans.filter(function (p) { return p.status === 'executed'; }).length;
-    var totalValue = plans
-      .filter(function (p) { return p.status === 'planned'; })
-      .reduce(function (s, p) { return s + p.qty * p.targetPrice; }, 0);
+    const planned = plans.filter(p => p.status === 'planned');
+    const executed = plans.filter(p => p.status === 'executed');
+    const totalPlannedValue = planned.reduce((s, p) => s + (p.qty * p.targetPrice), 0);
 
-    document.getElementById('plan-card-total').textContent    = plans.length;
-    document.getElementById('plan-card-planned').textContent  = planned;
-    document.getElementById('plan-card-executed').textContent = executed;
-    document.getElementById('plan-card-value').textContent    = Utils.formatCurrency(totalValue);
+    // Calculate how many are currently in buy zone (LTP <= Target Price)
+    let inBuyZoneCount = 0;
+    planned.forEach(p => {
+      const pData = Storage.getPrice(p.symbol);
+      if (pData && pData.price && pData.price <= p.targetPrice) {
+        inBuyZoneCount++;
+      }
+    });
+
+    const elTotal = document.getElementById('plan-card-total');
+    const elPlanned = document.getElementById('plan-card-planned');
+    const elExecuted = document.getElementById('plan-card-executed');
+    const elValue = document.getElementById('plan-card-value');
+
+    if (elTotal) elTotal.textContent = plans.length;
+    if (elPlanned) {
+      elPlanned.innerHTML = `${planned.length} ${inBuyZoneCount > 0 ? `<span class="badge badge-gain" style="font-size:.75rem;margin-left:.35rem">🎯 ${inBuyZoneCount} in Buy Zone</span>` : ''}`;
+    }
+    if (elExecuted) elExecuted.textContent = executed.length;
+    if (elValue) elValue.textContent = Utils.formatCurrency(totalPlannedValue);
   }
 
-  /* ---- RENDER ---- */
+  /* ---- RENDER PLANS TABLE ---- */
   function renderPlans() {
-    var plans = Storage.getPlans();
-    var tbody = document.getElementById('plan-tbody');
-    var tfoot = document.getElementById('plan-tfoot');
+    const plans = Storage.getPlans();
+    const tbody = document.getElementById('plan-tbody');
+    const tfoot = document.getElementById('plan-tfoot');
+    if (!tbody) return;
 
     updateSummaryCards(plans);
 
     if (plans.length === 0) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="9">No plans yet. Click "+ Add Plan" to get started.</td></tr>';
-      tfoot.innerHTML = '';
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="10" style="padding:2rem;text-align:center;color:var(--text-muted)">No purchase plans yet. Click <strong>+ Add Plan</strong> to set target prices for stocks you want to buy.</td></tr>';
+      if (tfoot) tfoot.innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = plans.map(function (plan) {
-      var isExecuted  = plan.status === 'executed';
-      var targetValue = plan.qty * plan.targetPrice;
-      var catBadge    = plan.categoryId
-        ? '<span class="exchange-badge" style="background:#ede9fe;color:#5b21b6">' + Utils.escHtml(plan.categoryId.replace(/-/g, ' ')) + '</span> '
+    tbody.innerHTML = plans.map(plan => {
+      const isExecuted = plan.status === 'executed';
+      const targetValue = plan.qty * plan.targetPrice;
+      const pData = Storage.getPrice(plan.symbol);
+      const ltp = pData && pData.price ? pData.price : null;
+
+      let ltpDisplay = '<span style="color:var(--text-muted)">—</span>';
+      let statusBadge = '';
+
+      if (isExecuted) {
+        statusBadge = '<span class="badge badge-executed">&#10003; Executed</span>';
+      } else if (ltp != null) {
+        const diff = ((ltp - plan.targetPrice) / plan.targetPrice) * 100;
+        const diffAbs = Math.abs(diff).toFixed(1);
+        const sign = diff >= 0 ? '+' : '-';
+
+        if (ltp <= plan.targetPrice) {
+          ltpDisplay = `<strong>${Utils.formatCurrency(ltp)}</strong> <span class="badge badge-gain" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
+          statusBadge = '<span class="badge badge-gain" title="Market price is at or below your target price!">🎯 Buy Zone</span>';
+        } else {
+          ltpDisplay = `${Utils.formatCurrency(ltp)} <span class="badge badge-loss" style="font-size:.7rem;margin-left:.25rem">${sign}${diffAbs}%</span>`;
+          statusBadge = `<span class="badge badge-planned" title="Market price is ${diffAbs}% above target">Above Target</span>`;
+        }
+      } else {
+        statusBadge = '<span class="badge badge-planned">Planned</span>';
+      }
+
+      // Priority badge
+      const priority = plan.priority || 'medium';
+      let priorityBadge = '';
+      if (priority === 'high') {
+        priorityBadge = '<span class="badge" style="background:#fee2e2;color:#991b1b" title="High Priority">🔥 High</span>';
+      } else if (priority === 'low') {
+        priorityBadge = '<span class="badge" style="background:#f1f5f9;color:#475569" title="Low Priority">Low</span>';
+      } else {
+        priorityBadge = '<span class="badge" style="background:#e0f2fe;color:#0369a1" title="Medium Priority">Med</span>';
+      }
+
+      const catBadge = plan.categoryId
+        ? `<span class="exchange-badge" style="background:#ede9fe;color:#5b21b6">${Utils.escHtml(plan.categoryId.replace(/-/g, ' '))}</span> `
         : '';
-      return '<tr>' +
-        '<td><strong>' + Utils.escHtml(plan.symbol) + '</strong></td>' +
-        '<td>' + catBadge + '<span class="exchange-badge">' + Utils.escHtml(plan.exchange) + '</span></td>' +
-        '<td>' + plan.qty + '</td>' +
-        '<td>' + Utils.formatCurrency(plan.targetPrice) + '</td>' +
-        '<td>' + Utils.formatCurrency(targetValue) + '</td>' +
-        '<td><span class="badge ' + (isExecuted ? 'badge-executed' : 'badge-planned') + '">' +
-          (isExecuted ? 'Executed' : 'Planned') + '</span></td>' +
-        '<td class="col-hide-md">' + Utils.escHtml(plan.notes || '—') + '</td>' +
-        '<td>' +
-          (!isExecuted ? '<button class="action-btn execute-plan-btn" data-id="' + plan.id + '" title="Execute — add to Holdings">&#10003;</button>' : '') +
-          (!isExecuted ? '<button class="action-btn edit-plan-btn" data-id="' + plan.id + '" title="Edit">&#9998;</button>' : '') +
-          '<button class="action-btn delete-plan-btn" data-id="' + plan.id + '" title="Delete">&#128465;</button>' +
-        '</td>' +
-      '</tr>';
+
+      return `<tr>
+        <td><strong>${Utils.escHtml(plan.symbol)}</strong></td>
+        <td>${catBadge}<span class="exchange-badge">${Utils.escHtml(plan.exchange || 'NSE')}</span></td>
+        <td>${priorityBadge}</td>
+        <td>${plan.qty}</td>
+        <td><strong>${Utils.formatCurrency(plan.targetPrice)}</strong></td>
+        <td>${ltpDisplay}</td>
+        <td>${Utils.formatCurrency(targetValue)}</td>
+        <td>${statusBadge}</td>
+        <td class="col-hide-md" style="font-size:.85rem;color:var(--text-muted)">${Utils.escHtml(plan.notes || '—')}</td>
+        <td>
+          <div class="actions-cell">
+            ${!isExecuted ? `<button class="action-btn execute-plan-btn" data-id="${plan.id}" title="Execute — add to Holdings" style="color:var(--gain);background:#ecfdf5;border-color:#a7f3d0">&#10003; Execute</button>` : ''}
+            ${!isExecuted ? `<button class="action-btn edit-plan-btn" data-id="${plan.id}" title="Edit Plan">&#9998;</button>` : ''}
+            <button class="action-btn delete-plan-btn" data-id="${plan.id}" title="Delete Plan">&#128465;</button>
+          </div>
+        </td>
+      </tr>`;
     }).join('');
 
-    var plannedTotal  = plans.filter(function (p) { return p.status === 'planned'; })
-      .reduce(function (s, p) { return s + p.qty * p.targetPrice; }, 0);
-    var executedTotal = plans.filter(function (p) { return p.status === 'executed'; })
-      .reduce(function (s, p) { return s + p.qty * p.targetPrice; }, 0);
+    const plannedTotal = plans
+      .filter(p => p.status === 'planned')
+      .reduce((s, p) => s + (p.qty * p.targetPrice), 0);
+    const executedTotal = plans
+      .filter(p => p.status === 'executed')
+      .reduce((s, p) => s + (p.qty * p.targetPrice), 0);
 
-    tfoot.innerHTML =
-      '<tr><td colspan="4" style="text-align:right;font-weight:600;color:var(--text-muted)">Planned total</td>' +
-      '<td style="font-weight:600">' + Utils.formatCurrency(plannedTotal) + '</td><td colspan="4"></td></tr>' +
-      '<tr><td colspan="4" style="text-align:right;font-weight:600;color:var(--text-muted)">Executed total</td>' +
-      '<td style="font-weight:600;color:var(--gain)">' + Utils.formatCurrency(executedTotal) + '</td><td colspan="4"></td></tr>';
+    if (tfoot) {
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Total Planned Capital:</td>
+          <td style="font-weight:700;color:var(--primary)">${Utils.formatCurrency(plannedTotal)}</td>
+          <td colspan="3"></td>
+        </tr>
+        <tr>
+          <td colspan="6" style="text-align:right;font-weight:600;color:var(--text-muted)">Total Executed:</td>
+          <td style="font-weight:700;color:var(--gain)">${Utils.formatCurrency(executedTotal)}</td>
+          <td colspan="3"></td>
+        </tr>
+      `;
+    }
   }
 
-  /* ---- CATEGORY / STOCK SELECT HELPERS ---- */
+  /* ---- CATEGORY & SELECT HELPERS ---- */
   function refreshCategorySelect() {
-    var wl  = Storage.getWatchlist();
-    var sel = document.getElementById('p-category');
-    var cur = sel.value;
+    const wl = Storage.getWatchlist();
+    const sel = document.getElementById('p-category');
+    if (!sel) return;
+    const cur = sel.value;
     sel.innerHTML = '<option value="">— Type symbol manually —</option>' +
-      Object.values(wl).map(function (cat) {
-        return '<option value="' + cat.id + '">' + Utils.escHtml(cat.name) +
-          ' (' + cat.stocks.length + ')</option>';
-      }).join('');
+      Object.values(wl).map(cat => `<option value="${cat.id}">${Utils.escHtml(cat.name)} (${cat.stocks.length})</option>`).join('');
     if (cur) sel.value = cur;
   }
 
   function onCategoryChange() {
-    var catId       = document.getElementById('p-category').value;
-    var symbolGroup = document.getElementById('p-symbol-group');
-    var stockGroup  = document.getElementById('p-stock-select-group');
+    const catId = document.getElementById('p-category').value;
+    const symbolGroup = document.getElementById('p-symbol-group');
+    const stockGroup = document.getElementById('p-stock-select-group');
 
     if (!catId) {
-      symbolGroup.style.display = '';
-      stockGroup.style.display  = 'none';
+      if (symbolGroup) symbolGroup.style.display = '';
+      if (stockGroup) stockGroup.style.display = 'none';
       return;
     }
 
-    symbolGroup.style.display = 'none';
-    stockGroup.style.display  = '';
+    if (symbolGroup) symbolGroup.style.display = 'none';
+    if (stockGroup) stockGroup.style.display = '';
 
-    var stocks = (Storage.getWatchlist()[catId] || {}).stocks || [];
-    document.getElementById('p-stock-select').innerHTML =
-      '<option value="">— Select stock —</option>' +
-      stocks.map(function (s) {
-        var sign = s.changePct >= 0 ? '+' : '';
-        return '<option value="' + Utils.escHtml(s.symbol) + '">' +
-          Utils.escHtml(s.symbol) + ' — ₹' + s.ltp.toFixed(2) +
-          ' (' + sign + s.changePct.toFixed(2) + '%)</option>';
-      }).join('');
+    const stocks = (Storage.getWatchlist()[catId] || {}).stocks || [];
+    const stockSel = document.getElementById('p-stock-select');
+    if (stockSel) {
+      stockSel.innerHTML = '<option value="">— Select stock —</option>' +
+        stocks.map(s => {
+          const sign = s.changePct >= 0 ? '+' : '';
+          return `<option value="${Utils.escHtml(s.symbol)}" data-ltp="${s.ltp || ''}">${Utils.escHtml(s.symbol)} — ₹${(s.ltp || 0).toFixed(2)} (${sign}${(s.changePct || 0).toFixed(2)}%)</option>`;
+        }).join('');
+    }
 
-    document.getElementById('p-exchange').value = 'NSE';
+    const exchEl = document.getElementById('p-exchange');
+    if (exchEl) exchEl.value = 'NSE';
+  }
+
+  function onStockSelectChange() {
+    const stockSel = document.getElementById('p-stock-select');
+    if (!stockSel || !stockSel.value) return;
+    const opt = stockSel.selectedOptions[0];
+    if (opt && opt.dataset.ltp) {
+      const priceInput = document.getElementById('p-price');
+      if (priceInput && !priceInput.value) {
+        priceInput.value = parseFloat(opt.dataset.ltp).toFixed(2);
+      }
+    }
   }
 
   /* ---- MODAL HELPERS ---- */
   function clearErrors() {
-    ['p-symbol-err', 'p-qty-err', 'p-price-err', 'p-stock-err'].forEach(function (id) {
-      var el = document.getElementById(id);
+    ['p-symbol-err', 'p-qty-err', 'p-price-err', 'p-stock-err'].forEach(id => {
+      const el = document.getElementById(id);
       if (el) el.textContent = '';
     });
-    ['p-symbol', 'p-qty', 'p-price'].forEach(function (id) {
-      document.getElementById(id).classList.remove('error');
+    ['p-symbol', 'p-qty', 'p-price'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('error');
     });
   }
 
   function openAddModal() {
     clearErrors();
-    document.getElementById('plan-id').value    = '';
-    document.getElementById('p-qty').value      = '';
-    document.getElementById('p-price').value    = '';
-    document.getElementById('p-notes').value    = '';
+    document.getElementById('plan-id').value = '';
+    document.getElementById('p-qty').value = '';
+    document.getElementById('p-price').value = '';
+    document.getElementById('p-notes').value = '';
     document.getElementById('p-exchange').value = 'NSE';
-    document.getElementById('p-symbol').value   = '';
-    document.getElementById('plan-modal-title').textContent = 'Add Plan';
+    document.getElementById('p-symbol').value = '';
+    const prioEl = document.getElementById('p-priority');
+    if (prioEl) prioEl.value = 'medium';
+    document.getElementById('plan-modal-title').textContent = 'Add Stock Purchase Plan';
 
     refreshCategorySelect();
     document.getElementById('p-category').value = '';
     onCategoryChange();
 
     App.openModal('modal-plan');
-    setTimeout(function () { document.getElementById('p-symbol').focus(); }, 50);
+    setTimeout(() => {
+      const inp = document.getElementById('p-symbol');
+      if (inp) inp.focus();
+    }, 50);
   }
 
   function openEditModal(id) {
-    var plan = Storage.getPlans().find(function (p) { return p.id === id; });
+    const plan = Storage.getPlans().find(p => p.id === id);
     if (!plan) return;
 
     clearErrors();
-    document.getElementById('plan-id').value    = plan.id;
-    document.getElementById('p-qty').value      = plan.qty;
-    document.getElementById('p-price').value    = plan.targetPrice;
-    document.getElementById('p-notes').value    = plan.notes || '';
-    document.getElementById('p-exchange').value = plan.exchange;
-    document.getElementById('plan-modal-title').textContent = 'Edit Plan';
+    document.getElementById('plan-id').value = plan.id;
+    document.getElementById('p-qty').value = plan.qty;
+    document.getElementById('p-price').value = plan.targetPrice;
+    document.getElementById('p-notes').value = plan.notes || '';
+    document.getElementById('p-exchange').value = plan.exchange || 'NSE';
+    const prioEl = document.getElementById('p-priority');
+    if (prioEl) prioEl.value = plan.priority || 'medium';
+    document.getElementById('plan-modal-title').textContent = 'Edit Stock Purchase Plan';
 
     refreshCategorySelect();
 
-    var catId = plan.categoryId || '';
+    const catId = plan.categoryId || '';
     document.getElementById('p-category').value = catId;
     onCategoryChange();
 
@@ -160,30 +244,35 @@
     }
 
     App.openModal('modal-plan');
-    setTimeout(function () { document.getElementById('p-symbol').focus(); }, 50);
+    setTimeout(() => {
+      const inp = document.getElementById('p-symbol');
+      if (inp) inp.focus();
+    }, 50);
   }
 
   function validateAndSave() {
     clearErrors();
 
-    var id       = document.getElementById('plan-id').value.trim();
-    var catId    = document.getElementById('p-category').value;
-    var exchange = document.getElementById('p-exchange').value;
-    var qty      = parseFloat(document.getElementById('p-qty').value);
-    var price    = parseFloat(document.getElementById('p-price').value);
-    var notes    = document.getElementById('p-notes').value.trim();
+    const id = document.getElementById('plan-id').value.trim();
+    const catId = document.getElementById('p-category').value;
+    const exchange = document.getElementById('p-exchange').value;
+    const qty = parseFloat(document.getElementById('p-qty').value);
+    const price = parseFloat(document.getElementById('p-price').value);
+    const notes = document.getElementById('p-notes').value.trim();
+    const prioEl = document.getElementById('p-priority');
+    const priority = prioEl ? prioEl.value : 'medium';
 
-    var symbol = '';
-    var valid  = true;
+    let symbol = '';
+    let valid = true;
 
     if (catId) {
       symbol = document.getElementById('p-stock-select').value;
       if (!symbol) {
-        document.getElementById('p-stock-err').textContent = 'Select a stock';
+        document.getElementById('p-stock-err').textContent = 'Please select a stock';
         valid = false;
       }
     } else {
-      symbol = document.getElementById('p-symbol').value.trim().toUpperCase();
+      symbol = (document.getElementById('p-symbol').value || '').trim().toUpperCase();
       if (!symbol) {
         document.getElementById('p-symbol-err').textContent = 'Symbol is required';
         document.getElementById('p-symbol').classList.add('error');
@@ -203,60 +292,87 @@
     }
     if (!valid) return;
 
-    var existing = id ? Storage.getPlans().find(function (p) { return p.id === id; }) : null;
-    var plan = {
-      id:          id || Utils.generateId(),
-      symbol:      symbol,
-      exchange:    exchange,
-      qty:         qty,
+    symbol = window.PriceService ? PriceService.cleanSymbol(symbol) : symbol;
+
+    const existing = id ? Storage.getPlans().find(p => p.id === id) : null;
+    const plan = {
+      id: id || Utils.generateId(),
+      symbol: symbol,
+      exchange: exchange,
+      qty: qty,
       targetPrice: price,
-      notes:       notes,
-      categoryId:  catId || null,
-      status:      existing ? existing.status : 'planned',
-      holdingId:   existing ? existing.holdingId : null
+      priority: priority,
+      notes: notes,
+      categoryId: catId || null,
+      status: existing ? existing.status : 'planned',
+      holdingId: existing ? existing.holdingId : null,
+      updatedAt: new Date().toISOString()
     };
 
     Storage.upsertPlan(plan);
     App.closeModal('modal-plan');
     renderPlans();
-    App.toast('Plan ' + (id ? 'updated' : 'added') + ': ' + symbol, 'success');
+    App.toast(`Plan ${id ? 'updated' : 'added'}: ${symbol}`, 'success');
+
+    // Fetch live price for this planned stock in background
+    if (window.PriceService) {
+      PriceService.fetchOne(symbol, exchange).then(() => renderPlans());
+    }
   }
 
   /* ---- EXECUTE PLAN ---- */
   function executePlan(id) {
-    var plan = Storage.getPlans().find(function (p) { return p.id === id; });
+    const plan = Storage.getPlans().find(p => p.id === id);
     if (!plan || plan.status === 'executed') return;
 
-    var confirmText = document.getElementById('confirm-text');
-    var confirmBtn  = document.getElementById('btn-confirm-ok');
+    const targetVal = plan.qty * plan.targetPrice;
+    const confirmText = document.getElementById('confirm-text');
+    const confirmBtn = document.getElementById('btn-confirm-ok');
 
-    confirmText.textContent =
-      'Add ' + plan.qty + ' × ' + plan.symbol +
-      ' at ' + Utils.formatCurrency(plan.targetPrice) + ' to Holdings?';
+    confirmText.innerHTML = `
+      Execute Plan for <strong>${Utils.escHtml(plan.symbol)}</strong>?<br>
+      <div style="margin-top:.75rem;padding:.75rem;background:#f8fafc;border-radius:6px;font-size:.9rem">
+        <div>Qty: <strong>${plan.qty}</strong> @ <strong>${Utils.formatCurrency(plan.targetPrice)}</strong></div>
+        <div style="margin-top:.25rem">Total Invested: <strong>${Utils.formatCurrency(targetVal)}</strong></div>
+      </div>
+      <p style="margin-top:.75rem;font-size:.85rem;color:var(--text-muted)">This will add <strong>${Utils.escHtml(plan.symbol)}</strong> to your Holdings list.</p>
+    `;
 
     function handler() {
       confirmBtn.removeEventListener('click', handler);
       App.closeModal('modal-confirm');
 
-      var now       = new Date().toISOString();
-      var holdingId = plan.holdingId || Utils.generateId();
+      const now = new Date().toISOString();
+      const holdingId = plan.holdingId || Utils.generateId();
 
       Storage.upsertHolding({
-        id:          holdingId,
-        symbol:      plan.symbol,
-        name:        plan.symbol,
-        exchange:    plan.exchange,
-        qty:         plan.qty,
+        id: holdingId,
+        symbol: plan.symbol,
+        name: plan.symbol,
+        exchange: plan.exchange || 'NSE',
+        qty: plan.qty,
         avgBuyPrice: plan.targetPrice,
-        notes:       'Promoted from investment plan' + (plan.notes ? ': ' + plan.notes : ''),
-        addedAt:     now,
-        updatedAt:   now
+        notes: 'Promoted from investment plan' + (plan.notes ? ': ' + plan.notes : ''),
+        addedAt: now,
+        updatedAt: now
       });
 
-      Storage.upsertPlan({ ...plan, status: 'executed', holdingId: holdingId, updatedAt: now });
-      Holdings.render();
+      Storage.upsertPlan({
+        ...plan,
+        status: 'executed',
+        holdingId: holdingId,
+        executedAt: now,
+        updatedAt: now
+      });
+
+      if (window.Holdings) Holdings.render();
+      if (window.Funds) Funds.render();
       renderPlans();
-      App.toast(plan.symbol + ' added to Holdings', 'success');
+      App.toast(`${plan.symbol} successfully added to Holdings!`, 'success');
+
+      if (window.PriceService) {
+        PriceService.fetchOne(plan.symbol, plan.exchange);
+      }
     }
 
     confirmBtn.addEventListener('click', handler);
@@ -265,14 +381,14 @@
 
   /* ---- DELETE PLAN ---- */
   function deletePlan(id) {
-    var plan = Storage.getPlans().find(function (p) { return p.id === id; });
+    const plan = Storage.getPlans().find(p => p.id === id);
     if (!plan) return;
     pendingDeleteId = id;
 
-    var confirmText = document.getElementById('confirm-text');
-    var confirmBtn  = document.getElementById('btn-confirm-ok');
+    const confirmText = document.getElementById('confirm-text');
+    const confirmBtn = document.getElementById('btn-confirm-ok');
 
-    confirmText.textContent = 'Delete plan for ' + plan.symbol + '?';
+    confirmText.innerHTML = `Delete purchase plan for <strong>${Utils.escHtml(plan.symbol)}</strong>?`;
 
     function handler() {
       confirmBtn.removeEventListener('click', handler);
@@ -289,29 +405,61 @@
     App.openModal('modal-confirm');
   }
 
+  /* ---- REFRESH ALL PLAN PRICES ---- */
+  async function refreshPlanPrices() {
+    const plans = Storage.getPlans().filter(p => p.status === 'planned');
+    if (plans.length === 0) {
+      App.toast('No active plans to check prices for.', 'info');
+      return;
+    }
+
+    if (window.PriceService) {
+      App.toast(`Checking live prices for ${plans.length} planned stock(s)...`, 'info');
+      await PriceService.fetchMultiple(plans);
+      renderPlans();
+      App.toast('Plan stock prices updated.', 'success');
+    }
+  }
+
   /* ---- INIT ---- */
   function init() {
-    document.getElementById('btn-add-plan').addEventListener('click', openAddModal);
-    document.getElementById('btn-save-plan').addEventListener('click', validateAndSave);
-    document.getElementById('p-category').addEventListener('change', onCategoryChange);
+    const btnAdd = document.getElementById('btn-add-plan');
+    const btnSave = document.getElementById('btn-save-plan');
+    const catSel = document.getElementById('p-category');
+    const stockSel = document.getElementById('p-stock-select');
 
-    document.getElementById('modal-plan').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') validateAndSave();
-    });
+    if (btnAdd) btnAdd.addEventListener('click', openAddModal);
+    if (btnSave) btnSave.addEventListener('click', validateAndSave);
+    if (catSel) catSel.addEventListener('change', onCategoryChange);
+    if (stockSel) stockSel.addEventListener('change', onStockSelectChange);
 
-    document.getElementById('plan-tbody').addEventListener('click', function (e) {
-      var executeBtn = e.target.closest('.execute-plan-btn');
-      if (executeBtn) { executePlan(executeBtn.dataset.id); return; }
+    const modalPlan = document.getElementById('modal-plan');
+    if (modalPlan) {
+      modalPlan.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') validateAndSave();
+      });
+    }
 
-      var editBtn = e.target.closest('.edit-plan-btn');
-      if (editBtn) { openEditModal(editBtn.dataset.id); return; }
+    const tbody = document.getElementById('plan-tbody');
+    if (tbody) {
+      tbody.addEventListener('click', e => {
+        const executeBtn = e.target.closest('.execute-plan-btn');
+        if (executeBtn) { executePlan(executeBtn.dataset.id); return; }
 
-      var deleteBtn = e.target.closest('.delete-plan-btn');
-      if (deleteBtn) { deletePlan(deleteBtn.dataset.id); return; }
-    });
+        const editBtn = e.target.closest('.edit-plan-btn');
+        if (editBtn) { openEditModal(editBtn.dataset.id); return; }
+
+        const deleteBtn = e.target.closest('.delete-plan-btn');
+        if (deleteBtn) { deletePlan(deleteBtn.dataset.id); return; }
+      });
+    }
 
     renderPlans();
   }
 
-  window.Plan = { init: init, render: renderPlans };
+  window.Plan = {
+    init,
+    render: renderPlans,
+    refreshPlanPrices
+  };
 })();
